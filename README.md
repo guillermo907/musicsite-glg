@@ -44,6 +44,12 @@ Recommended production deploy command:
 npx vercel --prod --name music-site
 ```
 
+Production alias:
+
+```text
+https://guillermo-lopez-guitar.vercel.app
+```
+
 Configure these environment variables in Vercel before deploying:
 
 - `AUTH_SECRET`
