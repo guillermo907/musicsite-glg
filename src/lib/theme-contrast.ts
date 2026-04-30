@@ -379,14 +379,19 @@ export function normalizeThemePalette(
     accent = darkenForContrast(accent, background, 3, 18);
     accentAlt = darkenForContrast(accentAlt, background, 3, 18);
 
-    const accentHsl = hexToHsl(accent);
-    ink = accentHsl.l > 52 ? lightForeground : lightText;
+    ink = readableTextColor(accent);
 
     if (contrastRatio(ink, accent) < 4.5) {
+      const accentHsl = hexToHsl(accent);
       accent =
-        accentHsl.l > 55
-          ? darkenForContrast(accent, ink, 4.5, 18)
-          : lightenForContrast(accent, ink, 4.5, 88);
+        contrastRatio(lightForeground, accent) >= contrastRatio(lightText, accent)
+          ? lightenForContrast(accent, lightForeground, 4.5, 88)
+          : darkenForContrast(accent, lightText, 4.5, 18);
+      ink = readableTextColor(accent);
+
+      if (contrastRatio(ink, accent) < 4.5) {
+        ink = accentHsl.l > 50 ? lightForeground : lightText;
+      }
     }
   } else {
     accent = ensureContrast(accent, background, 4.5, foreground);
