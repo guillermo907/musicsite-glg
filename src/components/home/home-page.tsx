@@ -228,7 +228,7 @@ export function HomePage({ content }: HomePageProps) {
           {localized.lessonPackages.map((lessonPackage) => (
             <article key={lessonPackage.title} className={styles.packageCard}>
               <h3>{lessonPackage.title}</h3>
-              <strong>{lessonPackage.price}</strong>
+              <strong>{formatPackagePrice(lessonPackage.price, locale)}</strong>
               <span>{lessonPackage.cadence}</span>
               <p>{lessonPackage.description}</p>
               <ul>
@@ -333,6 +333,22 @@ function ThemedGalleryArtwork({ image, title }: { image: string; title: string }
       {kind === "lesson" ? <i className={styles.lessonHill} /> : null}
     </span>
   );
+}
+
+function formatPackagePrice(price: string, locale: Locale) {
+  if (locale !== "es") {
+    return price;
+  }
+
+  const usdAmount = Number.parseFloat(price.replace(/[^0-9.]/g, ""));
+
+  if (!Number.isFinite(usdAmount)) {
+    return price;
+  }
+
+  const roundedMxn = Math.round((usdAmount * 17.5) / 100) * 100;
+
+  return `$${roundedMxn.toLocaleString("es-MX")} MXN`;
 }
 
 function VideoEmbed({ title, url }: { title: string; url: string }) {
