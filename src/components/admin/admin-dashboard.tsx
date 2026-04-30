@@ -56,6 +56,7 @@ function subscribeThemeMode(callback: () => void) {
 
 export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProps) {
   const [content, setContent] = useState(initialContent);
+  const contentRef = useRef(initialContent);
   const [paletteVariants, setPaletteVariants] = useState<PaletteVariantSet>({ dark: [], light: [] });
   const [selectedVariant, setSelectedVariant] = useState<SelectedVariant>({ dark: 0, light: 0 });
   const activePalette = useSyncExternalStore<"dark" | "light">(
@@ -68,6 +69,15 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
   const normalizedTheme = normalizeSiteTheme(content.theme);
   const contrast = normalizedTheme;
   const lightContrast = normalizedTheme.light;
+
+  function setDraftContent(updater: SiteContent | ((current: SiteContent) => SiteContent)) {
+    setContent((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater;
+      contentRef.current = next;
+
+      return next;
+    });
+  }
 
   function setAdminThemeMode(mode: "dark" | "light") {
     if (typeof document === "undefined") {
@@ -86,18 +96,18 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
   }
 
   function update<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
-    setContent((current) => ({ ...current, [key]: value }));
+    setDraftContent((current) => ({ ...current, [key]: value }));
   }
 
   function updateTheme<K extends keyof SiteContent["theme"]>(key: K, value: SiteContent["theme"][K]) {
-    setContent((current) => ({ ...current, theme: { ...current.theme, [key]: value } }));
+    setDraftContent((current) => ({ ...current, theme: { ...current.theme, [key]: value } }));
   }
 
   function updateLightTheme<K extends keyof SiteContent["theme"]["light"]>(
     key: K,
     value: SiteContent["theme"]["light"][K]
   ) {
-    setContent((current) => ({
+    setDraftContent((current) => ({
       ...current,
       theme: {
         ...current.theme,
@@ -112,6 +122,29 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
     }));
   }
 
+  function updateWallpaperForBothModes(value: string) {
+    setDraftContent((current) => ({
+      ...current,
+      theme: {
+        ...current.theme,
+        backgroundImage: value,
+        light: {
+          ...current.theme.light,
+          backgroundImage: value
+        }
+      }
+    }));
+  }
+
+  function setWallpaperDraft(value: string) {
+    updateWallpaperForBothModes(value);
+
+    if (!value) {
+      setPaletteVariants({ dark: [], light: [] });
+      setSelectedVariant({ dark: 0, light: 0 });
+    }
+  }
+
   function applyPaletteVariant(
     mode: "dark" | "light",
     index: number,
@@ -124,7 +157,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
     }
 
     setSelectedVariant((current) => ({ ...current, [mode]: index }));
-    setContent((current) => {
+    setDraftContent((current) => {
       if (mode === "dark") {
         return {
           ...current,
@@ -162,21 +195,34 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
     const variants = await extractPaletteOptions(wallpaper);
     setPaletteVariants(variants);
     setSelectedVariant({ dark: 0, light: 0 });
-    applyPaletteVariant("dark", 0, variants);
-    applyPaletteVariant("light", 0, variants);
+    setDraftContent((current) => ({
+      ...current,
+      theme: {
+        ...current.theme,
+        accent: variants.dark[0]?.tokens.accent ?? current.theme.accent,
+        accentAlt: variants.dark[0]?.tokens.accentAlt ?? current.theme.accentAlt,
+        background: variants.dark[0]?.tokens.background ?? current.theme.background,
+        light: {
+          ...normalizeSiteTheme(current.theme).light,
+          accent: variants.light[0]?.tokens.accent ?? current.theme.light.accent,
+          accentAlt: variants.light[0]?.tokens.accentAlt ?? current.theme.light.accentAlt,
+          background: variants.light[0]?.tokens.background ?? current.theme.light.background
+        }
+      }
+    }));
 
     return variants;
   }
 
   function updateSeo<K extends keyof SiteContent["seo"]>(key: K, value: SiteContent["seo"][K]) {
-    setContent((current) => ({ ...current, seo: { ...current.seo, [key]: value } }));
+    setDraftContent((current) => ({ ...current, seo: { ...current.seo, [key]: value } }));
   }
 
   function updateSocial<K extends keyof SiteContent["socialLinks"]>(
     key: K,
     value: SiteContent["socialLinks"][K]
   ) {
-    setContent((current) => ({
+    setDraftContent((current) => ({
       ...current,
       socialLinks: { ...current.socialLinks, [key]: value }
     }));
@@ -206,11 +252,11 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
           className={styles.editor}
           onSubmit={() => {
             const normalizedContent = {
-              ...content,
-              theme: normalizeThemeForStorage(content.theme)
+              ...contentRef.current,
+              theme: normalizeThemeForStorage(contentRef.current.theme)
             };
 
-            setContent(normalizedContent);
+            setDraftContent(normalizedContent);
 
             if (payloadRef.current) {
               payloadRef.current.value = JSON.stringify(normalizedContent);
@@ -247,7 +293,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                 className={styles.resetTheme}
                 type="button"
                 onClick={() =>
-                  setContent((current) => ({
+                  setDraftContent((current) => ({
                     ...current,
                     theme: { ...DEFAULT_THEME }
                   }))
@@ -266,11 +312,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                   ? content.theme.backgroundImage
                   : content.theme.light.backgroundImage
               }
-              onUploaded={(value) =>
-                activePalette === "dark"
-                  ? updateTheme("backgroundImage", value)
-                  : updateLightTheme("backgroundImage", value)
-              }
+              onUploaded={setWallpaperDraft}
               onExtracted={generateWallpaperPalettes}
               onPalette={(index) => applyPaletteVariant(activePalette, index)}
             />
@@ -285,11 +327,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                 }
                 onChange={(value) =>
                   void (async () => {
-                    if (activePalette === "dark") {
-                      updateTheme("backgroundImage", value);
-                    } else {
-                      updateLightTheme("backgroundImage", value);
-                    }
+                    setWallpaperDraft(value);
 
                     if (value) {
                       await generateWallpaperPalettes(value);
@@ -831,6 +869,58 @@ type PaletteVariantSet = Record<"dark" | "light", PaletteVariant[]>;
 
 type SelectedVariant = Record<"dark" | "light", number>;
 
+type PaletteMood = {
+  label: string;
+  hueShift: number;
+  accentShift: number;
+  accentAltShift: number;
+  saturationBoost: number;
+  backgroundShift: number;
+};
+
+const paletteMoods: PaletteMood[] = [
+  {
+    label: "Electric source",
+    hueShift: 0,
+    accentShift: 0,
+    accentAltShift: 150,
+    saturationBoost: 16,
+    backgroundShift: 0
+  },
+  {
+    label: "Neon club",
+    hueShift: 18,
+    accentShift: 8,
+    accentAltShift: 128,
+    saturationBoost: 24,
+    backgroundShift: -10
+  },
+  {
+    label: "Copper stage",
+    hueShift: -28,
+    accentShift: -16,
+    accentAltShift: 42,
+    saturationBoost: 18,
+    backgroundShift: -22
+  },
+  {
+    label: "Blue velvet",
+    hueShift: 46,
+    accentShift: 24,
+    accentAltShift: 202,
+    saturationBoost: 20,
+    backgroundShift: 18
+  },
+  {
+    label: "Latin bloom",
+    hueShift: -62,
+    accentShift: -36,
+    accentAltShift: 92,
+    saturationBoost: 28,
+    backgroundShift: -34
+  }
+];
+
 function clampChannel(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
@@ -940,23 +1030,27 @@ async function extractDominantHslFromThumbnail(dataUrl: string): Promise<HslColo
 }
 
 function createPaletteVariants(sourceHsl: HslColor): PaletteVariantSet {
-  const shifts = [0, 15, -30, 45, -60];
+  const vividSource = {
+    h: sourceHsl.h,
+    s: clampPercent(Math.max(sourceHsl.s, 52), 52, 86),
+    l: clampPercent(sourceHsl.l, 34, 64)
+  };
 
-  const buildVariants = (mode: "dark" | "light") => shifts.map((shift) => {
+  const buildVariants = (mode: "dark" | "light") => paletteMoods.map((mood) => {
     const selectedHsl = {
-      h: normalizeHue(sourceHsl.h + shift),
-      s: sourceHsl.s,
-      l: sourceHsl.l
+      h: normalizeHue(vividSource.h + mood.hueShift),
+      s: clampPercent(vividSource.s + mood.saturationBoost, 58, 92),
+      l: vividSource.l
     };
 
     return {
-      label: shift === 0 ? "Source hue" : `${shift > 0 ? "+" : ""}${shift}° hue`,
+      label: mood.label,
       sourceHsl,
       selectedHsl,
       tokens:
         mode === "light"
-          ? enforceContrastLight(generateThemeTokens(selectedHsl, "light"))
-          : enforceAccessibility(generateThemeTokens(selectedHsl, "dark"), "dark")
+          ? enforceContrastLight(generateThemeTokens(selectedHsl, "light", mood))
+          : enforceAccessibility(generateThemeTokens(selectedHsl, "dark", mood), "dark")
     };
   });
 
@@ -966,16 +1060,29 @@ function createPaletteVariants(sourceHsl: HslColor): PaletteVariantSet {
   };
 }
 
-function generateThemeTokens(hsl: HslColor, mode: "dark" | "light"): GeneratedThemeTokens {
+function generateThemeTokens(hsl: HslColor, mode: "dark" | "light", mood: PaletteMood): GeneratedThemeTokens {
   const hue = normalizeHue(hsl.h);
+  const accentHue = normalizeHue(hue + mood.accentShift);
+  const accentAltHue = normalizeHue(hue + mood.accentAltShift);
+  const backgroundHue = normalizeHue(hue + mood.backgroundShift);
+  const accentSaturation = clampPercent(hsl.s + mood.saturationBoost * 0.35, 68, 94);
+  const accentAltSaturation = clampPercent(hsl.s - 8 + mood.saturationBoost * 0.25, 56, 84);
 
   return {
-    accent: hslToHex({ h: hue, s: 65, l: mode === "dark" ? 55 : 42 }),
-    accentAlt: hslToHex({ h: hue + 180, s: 45, l: mode === "dark" ? 50 : 38 }),
-    background: hslToHex({ h: hue, s: mode === "dark" ? 20 : 15, l: mode === "dark" ? 10 : 97 }),
-    surface: hslToHex({ h: hue, s: mode === "dark" ? 15 : 12, l: mode === "dark" ? 18 : 92 }),
-    text: hslToHex({ h: hue, s: 8, l: mode === "dark" ? 95 : 8 }),
-    muted: hslToHex({ h: hue, s: 20, l: mode === "dark" ? 70 : 35 })
+    accent: hslToHex({ h: accentHue, s: accentSaturation, l: mode === "dark" ? 58 : 40 }),
+    accentAlt: hslToHex({ h: accentAltHue, s: accentAltSaturation, l: mode === "dark" ? 54 : 36 }),
+    background: hslToHex({
+      h: backgroundHue,
+      s: mode === "dark" ? 28 : 18,
+      l: mode === "dark" ? 9 : 96
+    }),
+    surface: hslToHex({
+      h: backgroundHue,
+      s: mode === "dark" ? 22 : 14,
+      l: mode === "dark" ? 17 : 91
+    }),
+    text: hslToHex({ h: backgroundHue, s: 8, l: mode === "dark" ? 96 : 8 }),
+    muted: hslToHex({ h: backgroundHue, s: 22, l: mode === "dark" ? 74 : 30 })
   };
 }
 
