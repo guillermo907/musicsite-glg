@@ -169,7 +169,7 @@
 .statement p,
 .sectionHeader p,
 .contact p {
-  color: var(--muted);
+  color: var(--foreground);
   font-size: 1.12rem;
   line-height: 1.75;
 }
@@ -320,7 +320,7 @@
 }
 
 .formatCard p {
-  color: var(--muted);
+  color: var(--foreground);
   line-height: 1.65;
 }
 
