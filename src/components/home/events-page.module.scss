@@ -299,7 +299,7 @@
 }
 
 .formatCard h3,
-.photoWall strong {
+.muralScene strong {
   font-family: var(--font-display);
   font-size: 2rem;
   letter-spacing: -0.05em;
@@ -316,35 +316,43 @@
   display: grid;
   gap: 1rem;
   grid-auto-flow: dense;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin-top: 2rem;
 }
 
-.photoWall figure {
+.muralScene {
+  background:
+    radial-gradient(circle at 18% 14%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 14rem),
+    linear-gradient(150deg, rgba(255, 247, 234, 0.08), rgba(255, 247, 234, 0.025));
+  border: 1px solid var(--line);
+  border-radius: 1.8rem;
+  grid-column: span 2;
   margin: 0;
-  min-height: 21rem;
+  min-height: 24rem;
+  overflow: hidden;
+  padding: 0.72rem;
   position: relative;
 }
 
-.photoWall figure::before {
+.muralScene::before {
   background:
-    linear-gradient(to top, rgba(5, 4, 3, 0.88), rgba(5, 4, 3, 0.18) 62%, transparent),
-    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 13rem);
+    linear-gradient(to top, rgba(5, 4, 3, 0.92), rgba(5, 4, 3, 0.18) 64%, transparent),
+    radial-gradient(circle at 16% 14%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 16rem);
   content: "";
   inset: 0;
   mix-blend-mode: multiply;
   pointer-events: none;
   position: absolute;
-  z-index: 1;
+  z-index: 2;
 }
 
-:global(html[data-theme="light"]) .photoWall figure::before {
+:global(html[data-theme="light"]) .muralScene::before {
   background:
-    linear-gradient(to top, rgba(18, 15, 13, 0.72), rgba(18, 15, 13, 0.12) 62%, transparent),
+    linear-gradient(to top, rgba(18, 15, 13, 0.72), rgba(18, 15, 13, 0.12) 64%, transparent),
     radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 13rem);
 }
 
-.photoWall figure::after {
+.muralScene::after {
   background-image: radial-gradient(rgba(255, 255, 255, 0.16) 0.7px, transparent 0.7px);
   background-size: 3px 3px;
   content: "";
@@ -352,10 +360,46 @@
   opacity: 0.2;
   pointer-events: none;
   position: absolute;
+  z-index: 3;
+}
+
+.featuredScene {
+  grid-column: span 4;
+  grid-row: span 2;
+  min-height: 34rem;
+}
+
+.layeredScene .muralImages {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(7rem, 0.8fr);
+  height: 100%;
+}
+
+.featuredScene .muralImages {
+  grid-template-columns: minmax(0, 1.5fr) minmax(10rem, 0.65fr);
+}
+
+.muralImages {
+  border-radius: 1.25rem;
+  height: 100%;
+  min-height: inherit;
+  overflow: hidden;
+  position: relative;
+}
+
+.layeredScene .muralImages::before {
+  background:
+    linear-gradient(90deg, transparent 48%, rgba(255, 250, 240, 0.12) 48%, rgba(255, 250, 240, 0.12) 49%, transparent 49%),
+    linear-gradient(0deg, transparent 47%, rgba(255, 250, 240, 0.1) 47%, rgba(255, 250, 240, 0.1) 48%, transparent 48%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
   z-index: 2;
 }
 
-.photoWall img {
+.muralImages img {
   filter: grayscale(0.1) saturate(0.72) contrast(1.22) brightness(0.76);
   height: 100%;
   object-fit: cover;
@@ -363,36 +407,48 @@
   width: 100%;
 }
 
-:global(html[data-theme="light"]) .photoWall img {
+:global(html[data-theme="light"]) .muralImages img {
   filter: grayscale(0.08) saturate(0.76) contrast(1.12) brightness(0.92);
 }
 
-.photoWall figcaption {
+.muralImages img:not(:first-child) {
+  min-height: 0;
+}
+
+.layeredScene .primaryPhoto {
+  grid-row: span 2;
+}
+
+.featuredScene .secondaryPhoto:last-child {
+  transform: scale(1.012) translateY(-0.5rem);
+}
+
+.muralScene:not(.layeredScene) .muralImages img {
+  position: absolute;
+  inset: 0;
+}
+
+.muralScene figcaption {
   bottom: 0;
   display: grid;
   gap: 0.25rem;
-  padding: 1.15rem;
+  padding: 1.35rem;
   position: absolute;
-  z-index: 3;
+  z-index: 4;
 }
 
-.photoWall strong {
+.muralScene strong {
   color: #fffaf0;
   margin: 0;
   text-shadow: 0 0.25rem 1.5rem rgba(0, 0, 0, 0.82);
 }
 
-.photoWall span {
+.muralScene span {
   color: rgba(255, 250, 240, 0.78);
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-.widePhoto {
-  grid-column: span 2;
-  grid-row: span 2;
 }
 
 .contact {
@@ -438,6 +494,11 @@
   .photoWall {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .featuredScene,
+  .muralScene {
+    grid-column: span 3;
+  }
 }
 
 @media (max-width: 760px) {
@@ -479,8 +540,22 @@
     width: 78%;
   }
 
-  .widePhoto {
+  .featuredScene,
+  .muralScene {
     grid-column: auto;
+    grid-row: auto;
+  }
+
+  .featuredScene {
+    min-height: 30rem;
+  }
+
+  .layeredScene .muralImages,
+  .featuredScene .muralImages {
+    grid-template-columns: 1fr;
+  }
+
+  .layeredScene .primaryPhoto {
     grid-row: auto;
   }
 }

@@ -45,7 +45,7 @@ type EventCopy = {
   gallery: Array<{
     title: string;
     place: string;
-    image: string;
+    images: string[];
   }>;
 };
 
@@ -139,17 +139,41 @@ const eventCopy: Record<Locale, EventCopy> = {
       }
     ],
     gallery: [
-      { title: "Stage-ready glow", place: "Live performance", image: "/events/main1-gallery.jpg" },
-      { title: "Electric focus", place: "Gallery set", image: "/events/main2-gallery.jpg" },
-      { title: "Restaurant atmosphere", place: "Private dining", image: "/events/restaurant1.jpg" },
-      { title: "Studio detail", place: "Preparation", image: "/events/studio1.jpg" },
-      { title: "Gallery performance", place: "Cultural rooms", image: "/events/gallery1.jpg" },
-      { title: "Hotel evening", place: "Lounge set", image: "/events/hotel2.jpg" },
-      { title: "Hotel ambience", place: "Cocktail hour", image: "/events/hotel1.jpg" },
-      { title: "Coastal ceremony", place: "Beach event", image: "/events/beach1.jpg" },
-      { title: "Transit and city", place: "Urban performance", image: "/events/trainstation1.jpg" },
-      { title: "Stage presence", place: "Live room", image: "/events/stage1.jpg" },
-      { title: "Casino night", place: "Nightlife", image: "/events/casino1.jpg" }
+      {
+        title: "Stage-ready glow",
+        place: "Live performance",
+        images: ["/events/main1-gallery.jpg", "/events/main2-gallery.jpg", "/events/stage1.jpg"]
+      },
+      {
+        title: "Hotel ambience",
+        place: "Lobby, lounge, and cocktail hour",
+        images: ["/events/hotel1.jpg", "/events/hotel2.jpg"]
+      },
+      {
+        title: "Cultural rooms",
+        place: "Gallery openings and urban performance",
+        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg"]
+      },
+      {
+        title: "Restaurant atmosphere",
+        place: "Private dining",
+        images: ["/events/restaurant1.jpg"]
+      },
+      {
+        title: "Coastal ceremony",
+        place: "Beach event",
+        images: ["/events/beach1.jpg"]
+      },
+      {
+        title: "Casino night",
+        place: "Nightlife",
+        images: ["/events/casino1.jpg"]
+      },
+      {
+        title: "Studio detail",
+        place: "Preparation and tone design",
+        images: ["/events/studio1.jpg"]
+      }
     ]
   },
   es: {
@@ -208,17 +232,41 @@ const eventCopy: Record<Locale, EventCopy> = {
       }
     ],
     gallery: [
-      { title: "Brillo de escenario", place: "Performance en vivo", image: "/events/main1-gallery.jpg" },
-      { title: "Foco eléctrico", place: "Set de galería", image: "/events/main2-gallery.jpg" },
-      { title: "Ambiente de restaurante", place: "Cena privada", image: "/events/restaurant1.jpg" },
-      { title: "Detalle de estudio", place: "Preparación", image: "/events/studio1.jpg" },
-      { title: "Performance de galería", place: "Espacios culturales", image: "/events/gallery1.jpg" },
-      { title: "Noche de hotel", place: "Lounge set", image: "/events/hotel2.jpg" },
-      { title: "Ambiente de hotel", place: "Coctel", image: "/events/hotel1.jpg" },
-      { title: "Ceremonia costera", place: "Evento de playa", image: "/events/beach1.jpg" },
-      { title: "Ciudad y tránsito", place: "Performance urbana", image: "/events/trainstation1.jpg" },
-      { title: "Presencia escénica", place: "Live room", image: "/events/stage1.jpg" },
-      { title: "Noche de casino", place: "Nightlife", image: "/events/casino1.jpg" }
+      {
+        title: "Brillo de escenario",
+        place: "Performance en vivo",
+        images: ["/events/main1-gallery.jpg", "/events/main2-gallery.jpg", "/events/stage1.jpg"]
+      },
+      {
+        title: "Ambiente de hotel",
+        place: "Lobby, lounge y coctel",
+        images: ["/events/hotel1.jpg", "/events/hotel2.jpg"]
+      },
+      {
+        title: "Espacios culturales",
+        place: "Galerías y performance urbana",
+        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg"]
+      },
+      {
+        title: "Ambiente de restaurante",
+        place: "Cena privada",
+        images: ["/events/restaurant1.jpg"]
+      },
+      {
+        title: "Ceremonia costera",
+        place: "Evento de playa",
+        images: ["/events/beach1.jpg"]
+      },
+      {
+        title: "Noche de casino",
+        place: "Nightlife",
+        images: ["/events/casino1.jpg"]
+      },
+      {
+        title: "Detalle de estudio",
+        place: "Preparación y diseño de tono",
+        images: ["/events/studio1.jpg"]
+      }
     ]
   }
 };
@@ -313,8 +361,26 @@ export function EventsPage({ content }: EventsPageProps) {
         </div>
         <div className={styles.photoWall}>
           {copy.gallery.map((item, index) => (
-            <figure key={item.image} className={index % 5 === 0 ? styles.widePhoto : undefined}>
-              <Image src={item.image} alt={`${item.title} - ${item.place}`} width={1280} height={900} />
+            <figure
+              key={item.title}
+              className={[
+                styles.muralScene,
+                index === 0 ? styles.featuredScene : "",
+                item.images.length > 1 ? styles.layeredScene : ""
+              ].filter(Boolean).join(" ")}
+            >
+              <div className={styles.muralImages}>
+                {item.images.map((image, imageIndex) => (
+                  <Image
+                    key={image}
+                    src={image}
+                    alt={`${item.title} - ${item.place}`}
+                    width={1280}
+                    height={900}
+                    className={imageIndex === 0 ? styles.primaryPhoto : styles.secondaryPhoto}
+                  />
+                ))}
+              </div>
               <figcaption>
                 <strong>{item.title}</strong>
                 <span>{item.place}</span>
