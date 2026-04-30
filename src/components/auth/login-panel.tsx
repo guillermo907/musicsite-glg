@@ -7,9 +7,10 @@ import styles from "./login-panel.module.scss";
 type LoginPanelProps = {
   callbackUrl: string;
   checkEmail: boolean;
+  emailLoginEnabled: boolean;
 };
 
-export function LoginPanel({ callbackUrl, checkEmail }: LoginPanelProps) {
+export function LoginPanel({ callbackUrl, checkEmail, emailLoginEnabled }: LoginPanelProps) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -33,30 +34,34 @@ export function LoginPanel({ callbackUrl, checkEmail }: LoginPanelProps) {
           Continue with Google
         </button>
 
-        <div className={styles.divider}>or</div>
+        {emailLoginEnabled ? (
+          <>
+            <div className={styles.divider}>or</div>
 
-        <form
-          className={styles.form}
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setBusy(true);
-            await signIn("nodemailer", { email, callbackUrl });
-            setBusy(false);
-          }}
-        >
-          <label htmlFor="email">Email magic link</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="admin@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-          <button type="submit" disabled={busy}>
-            {busy ? "Sending..." : "Send login link"}
-          </button>
-        </form>
+            <form
+              className={styles.form}
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setBusy(true);
+                await signIn("nodemailer", { email, callbackUrl });
+                setBusy(false);
+              }}
+            >
+              <label htmlFor="email">Email magic link</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+              <button type="submit" disabled={busy}>
+                {busy ? "Sending..." : "Send login link"}
+              </button>
+            </form>
+          </>
+        ) : null}
       </section>
     </main>
   );

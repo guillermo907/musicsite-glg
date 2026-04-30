@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useActionState, useRef, useState, useSyncExternalStore } from "react";
 import { saveSiteContentAction, signOutAction, type SaveState } from "@/app/actions/site-content";
 import {
   contrastGrade,
@@ -27,6 +27,7 @@ const initialState: SaveState = {
   message: ""
 };
 
+const DEFAULT_THEME = defaultContent.theme;
 const themeModeEvent = "auto-gdl-theme-change";
 
 function getStoredThemeMode(): "dark" | "light" {
@@ -187,7 +188,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                 onClick={() =>
                   setContent((current) => ({
                     ...current,
-                    theme: { ...defaultContent.theme }
+                    theme: { ...DEFAULT_THEME }
                   }))
                 }
               >
@@ -210,23 +211,18 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
               onPalette={(palette) =>
                 setContent((current) => ({
                   ...current,
-                  theme:
-                    activePalette === "dark"
-                      ? {
-                          ...current.theme,
-                          accent: palette.accent,
-                          accentAlt: palette.accentAlt,
-                          background: palette.background
-                        }
-                      : {
-                          ...current.theme,
-                          light: {
-                            ...current.theme.light,
-                            accent: palette.accent,
-                            accentAlt: palette.accentAlt,
-                            background: palette.background
-                          }
-                        }
+                  theme: {
+                    ...current.theme,
+                    accent: palette.dark.accent,
+                    accentAlt: palette.dark.accentAlt,
+                    background: palette.dark.background,
+                    light: {
+                      ...current.theme.light,
+                      accent: palette.light.accent,
+                      accentAlt: palette.light.accentAlt,
+                      background: palette.light.background
+                    }
+                  }
                 }))
               }
             />
@@ -602,31 +598,12 @@ function WallpaperUploader({
   mode: "dark" | "light";
   currentImage: string;
   onUploaded: (value: string) => void;
-  onPalette: (palette: ExtractedPalette) => void;
+  onPalette: (palette: PaletteVariant) => void;
 }) {
   const [status, setStatus] = useState<"idle" | "reading" | "processing" | "ready" | "error">("idle");
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState("");
-  const [paletteOptions, setPaletteOptions] = useState<ExtractedPalette[]>([]);
-  const lastUploadedImage = useRef("");
-
-  useEffect(() => {
-    if (!lastUploadedImage.current) {
-      return;
-    }
-
-    let alive = true;
-
-    extractPaletteOptions(lastUploadedImage.current, mode).then((options) => {
-      if (alive) {
-        setPaletteOptions(options);
-      }
-    });
-
-    return () => {
-      alive = false;
-    };
-  }, [mode]);
+  const [paletteOptions, setPaletteOptions] = useState<PaletteVariant[]>([]);
 
   async function handleFile(file?: File) {
     if (!file) {
@@ -666,7 +643,7 @@ function WallpaperUploader({
         if (typeof reader.result === "string") {
           try {
             const compressed = await compressWallpaper(reader.result);
-            const extracted = await extractPaletteOptions(compressed, mode);
+            const extracted = await extractPaletteOptions(compressed);
 
             if (compressed.length > 7_500_000) {
               setStatus("error");
@@ -675,7 +652,6 @@ function WallpaperUploader({
               return;
             }
 
-            lastUploadedImage.current = compressed;
             onUploaded(compressed);
             onPalette(extracted[0]);
             setPaletteOptions(extracted);
@@ -735,14 +711,14 @@ function WallpaperUploader({
               <button key={option.label} type="button" onClick={() => onPalette(option)}>
                 <strong>{option.label}</strong>
                 <span>
-                  <i style={{ background: option.background }} />
-                  <i style={{ background: option.accent }} />
-                  <i style={{ background: option.accentAlt }} />
+                  <i style={{ background: option[mode].background }} />
+                  <i style={{ background: option[mode].accent }} />
+                  <i style={{ background: option[mode].accentAlt }} />
                 </span>
               </button>
             ))}
           </div>
-          <p>Choose one of three color moods generated from the uploaded wallpaper.</p>
+          <p>Choose one of five hue variants generated from the uploaded wallpaper.</p>
         </div>
       ) : null}
       {currentImage ? (
@@ -763,51 +739,43 @@ type Rgb = {
   b: number;
 };
 
-type ExtractedPalette = {
-  label: string;
-  background: string;
+type HslColor = {
+  h: number;
+  s: number;
+  l: number;
+};
+
+type GeneratedThemeTokens = {
   accent: string;
   accentAlt: string;
+  background: string;
+  surface: string;
+  text: string;
+  muted: string;
+};
+
+type PaletteVariant = {
+  label: string;
+  sourceHsl: HslColor;
+  selectedHsl: HslColor;
+  dark: GeneratedThemeTokens;
+  light: GeneratedThemeTokens;
 };
 
 function clampChannel(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+function clampPercent(value: number, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeHue(hue: number) {
+  return ((hue % 360) + 360) % 360;
+}
+
 function toHex({ r, g, b }: Rgb) {
   return `#${[r, g, b].map((value) => clampChannel(value).toString(16).padStart(2, "0")).join("")}`;
-}
-
-function mixRgb(a: Rgb, b: Rgb, amount: number): Rgb {
-  return {
-    r: a.r + (b.r - a.r) * amount,
-    g: a.g + (b.g - a.g) * amount,
-    b: a.b + (b.b - a.b) * amount
-  };
-}
-
-function vividRgb(color: Rgb, amount: number): Rgb {
-  const average = (color.r + color.g + color.b) / 3;
-
-  return {
-    r: average + (color.r - average) * amount,
-    g: average + (color.g - average) * amount,
-    b: average + (color.b - average) * amount
-  };
-}
-
-function colorDistance(a: Rgb, b: Rgb) {
-  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
-}
-
-function getColorStats(color: Rgb) {
-  const max = Math.max(color.r, color.g, color.b) / 255;
-  const min = Math.min(color.r, color.g, color.b) / 255;
-  const lightness = (max + min) / 2;
-  const saturation = max === min ? 0 : (max - min) / (1 - Math.abs(2 * lightness - 1));
-  const luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
-
-  return { lightness, luminance, saturation };
 }
 
 async function loadImage(dataUrl: string) {
@@ -849,23 +817,33 @@ async function compressWallpaper(dataUrl: string) {
   return jpeg.length < dataUrl.length ? jpeg : dataUrl;
 }
 
-async function extractPaletteOptions(dataUrl: string, mode: "dark" | "light"): Promise<ExtractedPalette[]> {
+async function extractPaletteOptions(dataUrl: string): Promise<PaletteVariant[]> {
+  const dominantHsl = await extractDominantHslFromThumbnail(dataUrl);
+  return createPaletteVariants(dominantHsl);
+}
+
+async function extractDominantHslFromThumbnail(dataUrl: string): Promise<HslColor> {
   const image = await loadImage(dataUrl);
   const canvas = document.createElement("canvas");
-  const width = 72;
-  const height = Math.max(1, Math.round((image.naturalHeight / image.naturalWidth) * width));
-  canvas.width = width;
-  canvas.height = height;
+  const size = 200;
+  canvas.width = size;
+  canvas.height = size;
 
   const context = canvas.getContext("2d", { willReadFrequently: true });
 
   if (!context) {
-    return fallbackPalettes(mode);
+    return { h: 42, s: 58, l: 52 };
   }
 
-  context.drawImage(image, 0, 0, width, height);
-  const pixels = context.getImageData(0, 0, width, height).data;
-  const colors: Rgb[] = [];
+  const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  const offsetX = (size - drawWidth) / 2;
+  const offsetY = (size - drawHeight) / 2;
+  context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+  const pixels = context.getImageData(0, 0, size, size).data;
+  const samples: HslColor[] = [];
 
   for (let index = 0; index < pixels.length; index += 16) {
     const alpha = pixels[index + 3];
@@ -874,105 +852,238 @@ async function extractPaletteOptions(dataUrl: string, mode: "dark" | "light"): P
       continue;
     }
 
-    colors.push({
+    const hsl = rgbToHsl({
       r: pixels[index],
       g: pixels[index + 1],
       b: pixels[index + 2]
     });
-  }
 
-  if (colors.length === 0) {
-    return fallbackPalettes(mode);
-  }
-
-  const sortedByDarkness = [...colors].sort((a, b) => getColorStats(a).luminance - getColorStats(b).luminance);
-  const darkBackground = sortedByDarkness[Math.floor(sortedByDarkness.length * 0.12)] ?? sortedByDarkness[0];
-  const midBackground = sortedByDarkness[Math.floor(sortedByDarkness.length * 0.34)] ?? darkBackground;
-  const lightSource = sortedByDarkness[Math.floor(sortedByDarkness.length * 0.82)] ?? sortedByDarkness.at(-1) ?? midBackground;
-  const accentCandidates = colors
-    .filter((color) => {
-      const stats = getColorStats(color);
-      return stats.luminance > 0.12 && stats.luminance < 0.88 && stats.saturation > 0.18;
-    })
-    .sort((a, b) => {
-      const aStats = getColorStats(a);
-      const bStats = getColorStats(b);
-      return (
-        bStats.saturation * 1.7 +
-        colorDistance(b, darkBackground) / 255 -
-        (aStats.saturation * 1.7 + colorDistance(a, darkBackground) / 255)
-      );
-    });
-
-  const firstAccent = accentCandidates[0] ?? { r: 217, g: 164, b: 65 };
-  const secondAccent =
-    accentCandidates.find((color) => colorDistance(color, firstAccent) > 90) ??
-    accentCandidates[1] ??
-    { r: 70, g: 183, b: 169 };
-  const thirdAccent =
-    accentCandidates.find((color) => colorDistance(color, firstAccent) > 70 && colorDistance(color, secondAccent) > 70) ??
-    accentCandidates[2] ??
-    { r: 201, g: 134, b: 47 };
-
-  if (mode === "light") {
-    return [
-      {
-        label: "Light soft",
-        background: toHex(mixRgb(lightSource, { r: 248, g: 239, b: 220 }, 0.72)),
-        accent: toHex(vividRgb(firstAccent, 1.05)),
-        accentAlt: toHex(vividRgb(secondAccent, 1.05))
-      },
-      {
-        label: "Light vivid",
-        background: toHex(mixRgb(lightSource, { r: 246, g: 232, b: 202 }, 0.58)),
-        accent: toHex(vividRgb(secondAccent, 1.28)),
-        accentAlt: toHex(vividRgb(thirdAccent, 1.22))
-      },
-      {
-        label: "Light electric",
-        background: toHex(mixRgb(lightSource, { r: 255, g: 246, b: 226 }, 0.46)),
-        accent: toHex(vividRgb(thirdAccent, 1.55)),
-        accentAlt: toHex(vividRgb(firstAccent, 1.45))
-      }
-    ];
-  }
-
-  return [
-    {
-      label: "Dark soft",
-      background: toHex(mixRgb(darkBackground, { r: 13, g: 10, b: 8 }, 0.54)),
-      accent: toHex(vividRgb(firstAccent, 1.05)),
-      accentAlt: toHex(vividRgb(secondAccent, 1.04))
-    },
-    {
-      label: "Dark vivid",
-      background: toHex(mixRgb(midBackground, { r: 16, g: 10, b: 8 }, 0.44)),
-      accent: toHex(vividRgb(secondAccent, 1.28)),
-      accentAlt: toHex(vividRgb(thirdAccent, 1.22))
-    },
-    {
-      label: "Dark electric",
-      background: toHex(mixRgb(darkBackground, { r: 5, g: 8, b: 10 }, 0.34)),
-      accent: toHex(vividRgb(thirdAccent, 1.58)),
-      accentAlt: toHex(vividRgb(firstAccent, 1.5))
+    if (hsl.l > 4 && hsl.l < 97 && hsl.s > 8) {
+      samples.push(hsl);
     }
-  ];
+  }
+
+  if (samples.length === 0) {
+    return { h: 42, s: 58, l: 52 };
+  }
+
+  return dominantClusterHsl(samples, 6);
 }
 
-function fallbackPalettes(mode: "dark" | "light"): ExtractedPalette[] {
-  if (mode === "light") {
-    return [
-      { label: "Light soft", background: "#f3ead7", accent: "#c9862f", accentAlt: "#4f9f94" },
-      { label: "Light vivid", background: "#f6e2bd", accent: "#d28326", accentAlt: "#2a9d90" },
-      { label: "Light electric", background: "#fff0ce", accent: "#e06122", accentAlt: "#1bb5a8" }
-    ];
+function createPaletteVariants(sourceHsl: HslColor): PaletteVariant[] {
+  const shifts = [0, 15, -30, 45, -60];
+
+  return shifts.map((shift) => {
+    const selectedHsl = {
+      h: normalizeHue(sourceHsl.h + shift),
+      s: sourceHsl.s,
+      l: sourceHsl.l
+    };
+
+    return {
+      label: shift === 0 ? "Source hue" : `${shift > 0 ? "+" : ""}${shift}° hue`,
+      sourceHsl,
+      selectedHsl,
+      dark: enforceAccessibility(generateThemeTokens(selectedHsl, "dark"), "dark"),
+      light: enforceAccessibility(generateThemeTokens(selectedHsl, "light"), "light")
+    };
+  });
+}
+
+function generateThemeTokens(hsl: HslColor, mode: "dark" | "light"): GeneratedThemeTokens {
+  const hue = normalizeHue(hsl.h);
+
+  return {
+    accent: hslToHex({ h: hue, s: 65, l: mode === "dark" ? 55 : 42 }),
+    accentAlt: hslToHex({ h: hue + 180, s: 45, l: mode === "dark" ? 50 : 38 }),
+    background: hslToHex({ h: hue, s: mode === "dark" ? 20 : 15, l: mode === "dark" ? 10 : 97 }),
+    surface: hslToHex({ h: hue, s: mode === "dark" ? 15 : 12, l: mode === "dark" ? 18 : 92 }),
+    text: hslToHex({ h: hue, s: 8, l: mode === "dark" ? 95 : 8 }),
+    muted: hslToHex({ h: hue, s: 20, l: mode === "dark" ? 70 : 35 })
+  };
+}
+
+function enforceAccessibility(tokens: GeneratedThemeTokens, mode: "dark" | "light"): GeneratedThemeTokens {
+  return {
+    ...tokens,
+    text: adjustLightnessForContrast(tokens.text, tokens.background, 4.5, mode, "text"),
+    accent: adjustLightnessForContrast(tokens.accent, tokens.background, 3, mode, "accent"),
+    accentAlt: adjustLightnessForContrast(tokens.accentAlt, tokens.background, 3, mode, "accent"),
+    muted: adjustLightnessForContrast(tokens.muted, tokens.background, 4.5, mode, "text")
+  };
+}
+
+function adjustLightnessForContrast(
+  hex: string,
+  background: string,
+  minimumRatio: number,
+  mode: "dark" | "light",
+  tokenType: "text" | "accent"
+) {
+  const hsl = hexToHsl(hex);
+  const direction = mode === "dark" ? 1 : -1;
+  const cap = mode === "dark" ? (tokenType === "text" ? 98 : 88) : tokenType === "text" ? 2 : 18;
+  let next = hsl;
+
+  for (let step = 0; step <= 100; step += 1) {
+    const nextHex = hslToHex(next);
+
+    if (contrastRatio(nextHex, background) >= minimumRatio) {
+      return nextHex;
+    }
+
+    const nextLightness = clampPercent(next.l + direction * 2, mode === "dark" ? hsl.l : cap, mode === "dark" ? cap : hsl.l);
+
+    if (nextLightness === next.l) {
+      return nextHex;
+    }
+
+    next = { ...next, l: nextLightness };
   }
 
-  return [
-    { label: "Dark soft", background: "#120f0d", accent: "#d9a441", accentAlt: "#46b7a9" },
-    { label: "Dark vivid", background: "#17100c", accent: "#e6a43a", accentAlt: "#c96f45" },
-    { label: "Dark electric", background: "#091316", accent: "#65c8c1", accentAlt: "#d9a441" }
-  ];
+  return hslToHex(next);
+}
+
+function dominantClusterHsl(samples: HslColor[], clusterCount: number) {
+  const sorted = [...samples].sort((a, b) => b.s * 1.2 + colorWeight(b) - (a.s * 1.2 + colorWeight(a)));
+  let centers = sorted.slice(0, clusterCount).map((sample) => ({ ...sample }));
+
+  while (centers.length < clusterCount) {
+    centers.push(sorted[centers.length % sorted.length] ?? { h: 42, s: 58, l: 52 });
+  }
+
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const groups = centers.map(() => [] as HslColor[]);
+
+    samples.forEach((sample) => {
+      const nearest = centers
+        .map((center, index) => ({ index, distance: hslDistance(sample, center) }))
+        .sort((a, b) => a.distance - b.distance)[0];
+      groups[nearest?.index ?? 0].push(sample);
+    });
+
+    centers = centers.map((center, index) => averageHsl(groups[index]) ?? center);
+  }
+
+  const scored = centers
+    .map((center) => ({
+      center,
+      count: samples.filter((sample) => hslDistance(sample, center) < 22).length,
+      score: samples.filter((sample) => hslDistance(sample, center) < 22).length * (0.6 + center.s / 100)
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0]?.center ?? { h: 42, s: 58, l: 52 };
+}
+
+function colorWeight(color: HslColor) {
+  return 100 - Math.abs(color.l - 52);
+}
+
+function hslDistance(a: HslColor, b: HslColor) {
+  const hue = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h)) / 1.8;
+  return Math.sqrt(hue ** 2 + (a.s - b.s) ** 2 + (a.l - b.l) ** 2);
+}
+
+function averageHsl(colors: HslColor[]) {
+  if (colors.length === 0) {
+    return null;
+  }
+
+  const hue = Math.atan2(
+    colors.reduce((total, color) => total + Math.sin((color.h * Math.PI) / 180), 0) / colors.length,
+    colors.reduce((total, color) => total + Math.cos((color.h * Math.PI) / 180), 0) / colors.length
+  );
+
+  return {
+    h: normalizeHue((hue * 180) / Math.PI),
+    s: colors.reduce((total, color) => total + color.s, 0) / colors.length,
+    l: colors.reduce((total, color) => total + color.l, 0) / colors.length
+  };
+}
+
+function rgbToHsl({ r, g, b }: Rgb): HslColor {
+  const red = r / 255;
+  const green = g / 255;
+  const blue = b / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+
+  if (delta === 0) {
+    return { h: 0, s: 0, l: lightness * 100 };
+  }
+
+  const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+  let hue = 0;
+
+  if (max === red) {
+    hue = 60 * (((green - blue) / delta) % 6);
+  } else if (max === green) {
+    hue = 60 * ((blue - red) / delta + 2);
+  } else {
+    hue = 60 * ((red - green) / delta + 4);
+  }
+
+  return {
+    h: normalizeHue(hue),
+    s: saturation * 100,
+    l: lightness * 100
+  };
+}
+
+function hexToHsl(hex: string) {
+  return rgbToHsl(getRgbFromHex(hex));
+}
+
+function getRgbFromHex(hex: string): Rgb {
+  const value = hex.replace("#", "");
+  const number = Number.parseInt(value, 16);
+
+  return {
+    r: (number >> 16) & 255,
+    g: (number >> 8) & 255,
+    b: number & 255
+  };
+}
+
+function hslToHex({ h, s, l }: HslColor) {
+  const hue = normalizeHue(h);
+  const saturation = clampPercent(s) / 100;
+  const lightness = clampPercent(l) / 100;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const match = lightness - chroma / 2;
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (hue < 60) {
+    red = chroma;
+    green = x;
+  } else if (hue < 120) {
+    red = x;
+    green = chroma;
+  } else if (hue < 180) {
+    green = chroma;
+    blue = x;
+  } else if (hue < 240) {
+    green = x;
+    blue = chroma;
+  } else if (hue < 300) {
+    red = x;
+    blue = chroma;
+  } else {
+    red = chroma;
+    blue = x;
+  }
+
+  return toHex({
+    r: (red + match) * 255,
+    g: (green + match) * 255,
+    b: (blue + match) * 255
+  });
 }
 
 function ContrastDropdown({

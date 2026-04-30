@@ -23,5 +23,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     redirect("/admin");
   }
 
-  return <LoginPanel callbackUrl={params.callbackUrl ?? "/admin"} checkEmail={params.check === "email"} />;
+  return (
+    <LoginPanel
+      callbackUrl={params.callbackUrl ?? "/admin"}
+      checkEmail={params.check === "email"}
+      emailLoginEnabled={process.env.ENABLE_EMAIL_LOGIN === "true"}
+    />
+  );
 }
