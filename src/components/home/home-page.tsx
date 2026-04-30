@@ -71,6 +71,7 @@ export function HomePage({ content }: HomePageProps) {
       ? {
           bio: "Bio",
           services: "Servicios",
+          events: "Eventos",
           lessons: "Clases",
           contact: "Contacto",
           kicker: "Estudio de guitarra jazz / música en vivo / sonido de sesión",
@@ -91,6 +92,7 @@ export function HomePage({ content }: HomePageProps) {
       : {
           bio: "Bio",
           services: "Services",
+          events: "Events",
           lessons: "Lessons",
           contact: "Contact",
           kicker: "Jazz guitar studio / live performance / session sound",
@@ -129,6 +131,7 @@ export function HomePage({ content }: HomePageProps) {
         <div className={styles.navLinks}>
           <a href="#bio">{labels.bio}</a>
           <a href="#services">{labels.services}</a>
+          <a href="/events">{labels.events}</a>
           <a href="#lessons">{labels.lessons}</a>
           <a href="#contact">{labels.contact}</a>
           <LanguageToggle locale={locale} onChange={setStoredLocale} label={labels.languageLabel} />
