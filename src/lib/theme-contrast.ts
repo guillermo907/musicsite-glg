@@ -8,6 +8,12 @@ type Rgb = {
   b: number;
 };
 
+type Hsl = {
+  h: number;
+  s: number;
+  l: number;
+};
+
 export type ThemeTokens = {
   foreground: string;
   muted: string;
@@ -37,6 +43,14 @@ function toHex({ r, g, b }: Rgb) {
   return `#${[r, g, b].map((channel) => clamp(channel).toString(16).padStart(2, "0")).join("")}`;
 }
 
+function clampPercent(value: number, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeHue(hue: number) {
+  return ((hue % 360) + 360) % 360;
+}
+
 export function normalizeHex(hex: string | undefined, fallback = darkFallback) {
   const raw = String(hex ?? "").trim().replace(/^#/, "");
   const value =
@@ -63,6 +77,79 @@ export function getRgb(hex: string | undefined) {
     g: (number >> 8) & 255,
     b: number & 255
   };
+}
+
+function rgbToHsl({ r, g, b }: Rgb): Hsl {
+  const red = r / 255;
+  const green = g / 255;
+  const blue = b / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+
+  if (delta === 0) {
+    return { h: 0, s: 0, l: lightness * 100 };
+  }
+
+  const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+  let hue = 0;
+
+  if (max === red) {
+    hue = 60 * (((green - blue) / delta) % 6);
+  } else if (max === green) {
+    hue = 60 * ((blue - red) / delta + 2);
+  } else {
+    hue = 60 * ((red - green) / delta + 4);
+  }
+
+  return {
+    h: normalizeHue(hue),
+    s: saturation * 100,
+    l: lightness * 100
+  };
+}
+
+function hexToHsl(hex: string) {
+  return rgbToHsl(getRgb(hex));
+}
+
+function hslToHex({ h, s, l }: Hsl) {
+  const hue = normalizeHue(h);
+  const saturation = clampPercent(s) / 100;
+  const lightness = clampPercent(l) / 100;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const match = lightness - chroma / 2;
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (hue < 60) {
+    red = chroma;
+    green = x;
+  } else if (hue < 120) {
+    red = x;
+    green = chroma;
+  } else if (hue < 180) {
+    green = chroma;
+    blue = x;
+  } else if (hue < 240) {
+    green = x;
+    blue = chroma;
+  } else if (hue < 300) {
+    red = x;
+    blue = chroma;
+  } else {
+    red = chroma;
+    blue = x;
+  }
+
+  return toHex({
+    r: (red + match) * 255,
+    g: (green + match) * 255,
+    b: (blue + match) * 255
+  });
 }
 
 function channel(value: number) {
@@ -109,6 +196,46 @@ function ensureContrast(color: string, background: string, minimum: number, targ
   return contrastRatio(lightText, background) >= contrastRatio(darkText, background)
     ? lightText
     : darkText;
+}
+
+function darkenForContrast(color: string, background: string, minimum: number, minimumLightness: number) {
+  let next = hexToHsl(normalizeHex(color));
+
+  for (let step = 0; step <= 100; step += 1) {
+    const nextHex = hslToHex(next);
+
+    if (contrastRatio(nextHex, background) >= minimum) {
+      return nextHex;
+    }
+
+    if (next.l <= minimumLightness) {
+      return nextHex;
+    }
+
+    next = { ...next, l: Math.max(minimumLightness, next.l - 2) };
+  }
+
+  return hslToHex(next);
+}
+
+function lightenForContrast(color: string, background: string, minimum: number, maximumLightness: number) {
+  let next = hexToHsl(normalizeHex(color));
+
+  for (let step = 0; step <= 100; step += 1) {
+    const nextHex = hslToHex(next);
+
+    if (contrastRatio(nextHex, background) >= minimum) {
+      return nextHex;
+    }
+
+    if (next.l >= maximumLightness) {
+      return nextHex;
+    }
+
+    next = { ...next, l: Math.min(maximumLightness, next.l + 2) };
+  }
+
+  return hslToHex(next);
 }
 
 export function readableTextColor(background: string | undefined) {
@@ -193,13 +320,32 @@ export function contrastTokens(background: string, contrast: ContrastMode = "bal
 
 export function normalizeThemePalette(
   palette: ThemeSettings,
-  fallbackBackground = darkFallback
+  fallbackBackground = darkFallback,
+  mode: "dark" | "light" = "dark"
 ): NormalizedPalette {
   const background = normalizeHex(palette.background, fallbackBackground);
-  const foreground = readableTextColor(background);
   const tokens = contrastTokens(background, palette.contrast);
-  const accent = ensureContrast(normalizeHex(palette.accent, "#d9a441"), background, 4.5, foreground);
-  const accentAlt = ensureContrast(normalizeHex(palette.accentAlt, "#46b7a9"), background, 4.5, foreground);
+  let foreground = tokens.foreground;
+  let muted = tokens.muted;
+  let accent = ensureContrast(normalizeHex(palette.accent, "#d9a441"), background, mode === "light" ? 3 : 4.5, foreground);
+  let accentAlt = ensureContrast(normalizeHex(palette.accentAlt, "#46b7a9"), background, mode === "light" ? 3 : 4.5, foreground);
+  let ink = readableTextColor(accent);
+
+  if (mode === "light") {
+    foreground = darkenForContrast(foreground, background, 4.5, 5);
+    muted = darkenForContrast(muted, background, 3, 25);
+    accentAlt = darkenForContrast(accentAlt, background, 3, 18);
+
+    const accentHsl = hexToHsl(accent);
+    ink = hslToHex({ h: accentHsl.h, s: 8, l: accentHsl.l > 55 ? 8 : 96 });
+
+    if (contrastRatio(ink, accent) < 4.5) {
+      accent =
+        accentHsl.l > 55
+          ? darkenForContrast(accent, ink, 4.5, 18)
+          : lightenForContrast(accent, ink, 4.5, 88);
+    }
+  }
 
   return {
     ...palette,
@@ -209,7 +355,9 @@ export function normalizeThemePalette(
     backgroundImage: palette.backgroundImage ?? "",
     contrast: palette.contrast ?? "balanced",
     ...tokens,
-    ink: readableTextColor(accent)
+    foreground,
+    muted,
+    ink
   };
 }
 
@@ -234,8 +382,8 @@ export function normalizeThemeForStorage(theme: SiteContent["theme"]): SiteConte
 
 export function normalizeSiteTheme(theme: SiteContent["theme"]): NormalizedSiteTheme {
   return {
-    ...normalizeThemePalette(theme, darkFallback),
-    light: normalizeThemePalette(theme.light, lightFallback)
+    ...normalizeThemePalette(theme, darkFallback, "dark"),
+    light: normalizeThemePalette(theme.light, lightFallback, "light")
   };
 }
 

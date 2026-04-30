@@ -56,6 +56,8 @@ function subscribeThemeMode(callback: () => void) {
 
 export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProps) {
   const [content, setContent] = useState(initialContent);
+  const [paletteVariants, setPaletteVariants] = useState<PaletteVariantSet>({ dark: [], light: [] });
+  const [selectedVariant, setSelectedVariant] = useState<SelectedVariant>({ dark: 0, light: 0 });
   const activePalette = useSyncExternalStore<"dark" | "light">(
     subscribeThemeMode,
     getStoredThemeMode,
@@ -105,6 +107,62 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
         }
       }
     }));
+  }
+
+  function applyPaletteVariant(
+    mode: "dark" | "light",
+    index: number,
+    variants: PaletteVariantSet = paletteVariants
+  ) {
+    const variant = variants[mode][index] ?? variants[mode][0];
+
+    if (!variant) {
+      return;
+    }
+
+    setSelectedVariant((current) => ({ ...current, [mode]: index }));
+    setContent((current) => {
+      if (mode === "dark") {
+        return {
+          ...current,
+          theme: {
+            ...current.theme,
+            accent: variant.tokens.accent,
+            accentAlt: variant.tokens.accentAlt,
+            background: variant.tokens.background
+          }
+        };
+      }
+
+      return {
+        ...current,
+        theme: {
+          ...current.theme,
+          light: {
+            ...current.theme.light,
+            accent: variant.tokens.accent,
+            accentAlt: variant.tokens.accentAlt,
+            background: variant.tokens.background
+          }
+        }
+      };
+    });
+  }
+
+  async function generateWallpaperPalettes(wallpaper: string) {
+    if (!wallpaper) {
+      setPaletteVariants({ dark: [], light: [] });
+      setSelectedVariant({ dark: 0, light: 0 });
+      return null;
+    }
+
+    const variants = await extractPaletteOptions(wallpaper);
+    setPaletteVariants(variants);
+    setSelectedVariant({ dark: 0, light: 0 });
+    applyPaletteVariant("dark", 0, variants);
+    applyPaletteVariant("light", 0, variants);
+
+    return variants;
   }
 
   function updateSeo<K extends keyof SiteContent["seo"]>(key: K, value: SiteContent["seo"][K]) {
@@ -198,6 +256,8 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
 
             <WallpaperUploader
               mode={activePalette}
+              paletteVariants={paletteVariants}
+              selectedVariant={selectedVariant}
               currentImage={
                 activePalette === "dark"
                   ? content.theme.backgroundImage
@@ -208,23 +268,8 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                   ? updateTheme("backgroundImage", value)
                   : updateLightTheme("backgroundImage", value)
               }
-              onPalette={(palette) =>
-                setContent((current) => ({
-                  ...current,
-                  theme: {
-                    ...current.theme,
-                    accent: palette.dark.accent,
-                    accentAlt: palette.dark.accentAlt,
-                    background: palette.dark.background,
-                    light: {
-                      ...current.theme.light,
-                      accent: palette.light.accent,
-                      accentAlt: palette.light.accentAlt,
-                      background: palette.light.background
-                    }
-                  }
-                }))
-              }
+              onExtracted={generateWallpaperPalettes}
+              onPalette={(index) => applyPaletteVariant(activePalette, index)}
             />
 
             <div className={styles.includedWallpapers}>
@@ -236,9 +281,17 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
                     : content.theme.light.backgroundImage
                 }
                 onChange={(value) =>
-                  activePalette === "dark"
-                    ? updateTheme("backgroundImage", value)
-                    : updateLightTheme("backgroundImage", value)
+                  void (async () => {
+                    if (activePalette === "dark") {
+                      updateTheme("backgroundImage", value);
+                    } else {
+                      updateLightTheme("backgroundImage", value);
+                    }
+
+                    if (value) {
+                      await generateWallpaperPalettes(value);
+                    }
+                  })()
                 }
               />
             </div>
@@ -262,9 +315,9 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
 
             {activePalette === "dark" ? (
               <PalettePanel
-                accent={content.theme.accent}
-                accentAlt={content.theme.accentAlt}
-                background={content.theme.background}
+                accent={contrast.accent}
+                accentAlt={contrast.accentAlt}
+                background={contrast.background}
                 contrast={content.theme.contrast}
                 tokens={contrast}
                 wallpaper={content.theme.backgroundImage}
@@ -276,9 +329,9 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
               />
             ) : (
               <PalettePanel
-                accent={content.theme.light.accent}
-                accentAlt={content.theme.light.accentAlt}
-                background={content.theme.light.background}
+                accent={lightContrast.accent}
+                accentAlt={lightContrast.accentAlt}
+                background={lightContrast.background}
                 contrast={content.theme.light.contrast}
                 tokens={lightContrast}
                 wallpaper={content.theme.light.backgroundImage}
@@ -496,7 +549,7 @@ function PalettePanel({
   accentAlt: string;
   background: string;
   contrast: SiteContent["theme"]["contrast"];
-  tokens: ReturnType<typeof contrastTokens>;
+  tokens: ReturnType<typeof contrastTokens> & { ink?: string };
   wallpaper: string;
   onAccent: (value: string) => void;
   onAccentAlt: (value: string) => void;
@@ -505,7 +558,7 @@ function PalettePanel({
   onWallpaper: (value: string) => void;
 }) {
   const textRatio = contrastRatio(background, tokens.foreground);
-  const buttonRatio = contrastRatio(accent, readableTextColor(accent));
+  const buttonRatio = contrastRatio(accent, tokens.ink ?? readableTextColor(accent));
 
   return (
     <div className={styles.palettePanel}>
@@ -591,19 +644,26 @@ function WallpaperPresets({
 
 function WallpaperUploader({
   mode,
+  paletteVariants,
+  selectedVariant,
   currentImage,
   onUploaded,
+  onExtracted,
   onPalette
 }: {
   mode: "dark" | "light";
+  paletteVariants: PaletteVariantSet;
+  selectedVariant: SelectedVariant;
   currentImage: string;
   onUploaded: (value: string) => void;
-  onPalette: (palette: PaletteVariant) => void;
+  onExtracted: (wallpaper: string) => Promise<PaletteVariantSet | null>;
+  onPalette: (index: number) => void;
 }) {
   const [status, setStatus] = useState<"idle" | "reading" | "processing" | "ready" | "error">("idle");
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState("");
-  const [paletteOptions, setPaletteOptions] = useState<PaletteVariant[]>([]);
+  const activeOptions = paletteVariants[mode];
+  const activeVariantIndex = selectedVariant[mode];
 
   async function handleFile(file?: File) {
     if (!file) {
@@ -643,7 +703,6 @@ function WallpaperUploader({
         if (typeof reader.result === "string") {
           try {
             const compressed = await compressWallpaper(reader.result);
-            const extracted = await extractPaletteOptions(compressed);
 
             if (compressed.length > 7_500_000) {
               setStatus("error");
@@ -653,8 +712,7 @@ function WallpaperUploader({
             }
 
             onUploaded(compressed);
-            onPalette(extracted[0]);
-            setPaletteOptions(extracted);
+            await onExtracted(compressed);
             setStatus("ready");
             setProgress(100);
           } catch {
@@ -703,17 +761,22 @@ function WallpaperUploader({
                   : "Upload failed"}
         </em>
       </div>
-      {paletteOptions.length > 0 ? (
+      {activeOptions.length > 0 ? (
         <div className={styles.palettePreview} aria-label="Extracted wallpaper colors">
           <span>Wallpaper color schemes</span>
           <div className={styles.schemeGrid}>
-            {paletteOptions.map((option) => (
-              <button key={option.label} type="button" onClick={() => onPalette(option)}>
+            {activeOptions.map((option, index) => (
+              <button
+                className={activeVariantIndex === index ? styles.activeScheme : undefined}
+                key={`${mode}-${option.label}`}
+                type="button"
+                onClick={() => onPalette(index)}
+              >
                 <strong>{option.label}</strong>
                 <span>
-                  <i style={{ background: option[mode].background }} />
-                  <i style={{ background: option[mode].accent }} />
-                  <i style={{ background: option[mode].accentAlt }} />
+                  <i style={{ background: option.tokens.background }} />
+                  <i style={{ background: option.tokens.accent }} />
+                  <i style={{ background: option.tokens.accentAlt }} />
                 </span>
               </button>
             ))}
@@ -758,9 +821,12 @@ type PaletteVariant = {
   label: string;
   sourceHsl: HslColor;
   selectedHsl: HslColor;
-  dark: GeneratedThemeTokens;
-  light: GeneratedThemeTokens;
+  tokens: GeneratedThemeTokens;
 };
+
+type PaletteVariantSet = Record<"dark" | "light", PaletteVariant[]>;
+
+type SelectedVariant = Record<"dark" | "light", number>;
 
 function clampChannel(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -817,7 +883,7 @@ async function compressWallpaper(dataUrl: string) {
   return jpeg.length < dataUrl.length ? jpeg : dataUrl;
 }
 
-async function extractPaletteOptions(dataUrl: string): Promise<PaletteVariant[]> {
+async function extractPaletteOptions(dataUrl: string): Promise<PaletteVariantSet> {
   const dominantHsl = await extractDominantHslFromThumbnail(dataUrl);
   return createPaletteVariants(dominantHsl);
 }
@@ -870,10 +936,10 @@ async function extractDominantHslFromThumbnail(dataUrl: string): Promise<HslColo
   return dominantClusterHsl(samples, 6);
 }
 
-function createPaletteVariants(sourceHsl: HslColor): PaletteVariant[] {
+function createPaletteVariants(sourceHsl: HslColor): PaletteVariantSet {
   const shifts = [0, 15, -30, 45, -60];
 
-  return shifts.map((shift) => {
+  const buildVariants = (mode: "dark" | "light") => shifts.map((shift) => {
     const selectedHsl = {
       h: normalizeHue(sourceHsl.h + shift),
       s: sourceHsl.s,
@@ -884,10 +950,17 @@ function createPaletteVariants(sourceHsl: HslColor): PaletteVariant[] {
       label: shift === 0 ? "Source hue" : `${shift > 0 ? "+" : ""}${shift}° hue`,
       sourceHsl,
       selectedHsl,
-      dark: enforceAccessibility(generateThemeTokens(selectedHsl, "dark"), "dark"),
-      light: enforceAccessibility(generateThemeTokens(selectedHsl, "light"), "light")
+      tokens:
+        mode === "light"
+          ? enforceContrastLight(generateThemeTokens(selectedHsl, "light"))
+          : enforceAccessibility(generateThemeTokens(selectedHsl, "dark"), "dark")
     };
   });
+
+  return {
+    dark: buildVariants("dark"),
+    light: buildVariants("light")
+  };
 }
 
 function generateThemeTokens(hsl: HslColor, mode: "dark" | "light"): GeneratedThemeTokens {
@@ -904,6 +977,10 @@ function generateThemeTokens(hsl: HslColor, mode: "dark" | "light"): GeneratedTh
 }
 
 function enforceAccessibility(tokens: GeneratedThemeTokens, mode: "dark" | "light"): GeneratedThemeTokens {
+  if (mode === "light") {
+    return enforceContrastLight(tokens);
+  }
+
   return {
     ...tokens,
     text: adjustLightnessForContrast(tokens.text, tokens.background, 4.5, mode, "text"),
@@ -911,6 +988,69 @@ function enforceAccessibility(tokens: GeneratedThemeTokens, mode: "dark" | "ligh
     accentAlt: adjustLightnessForContrast(tokens.accentAlt, tokens.background, 3, mode, "accent"),
     muted: adjustLightnessForContrast(tokens.muted, tokens.background, 4.5, mode, "text")
   };
+}
+
+function enforceContrastLight(tokens: GeneratedThemeTokens): GeneratedThemeTokens {
+  let text = darkenForContrast(tokens.text, tokens.background, 4.5, 5);
+  text = darkenForContrast(text, tokens.surface, 4.5, 5);
+
+  const primaryHsl = hexToHsl(tokens.accent);
+  const primaryLabel = hslToHex({ h: primaryHsl.h, s: 8, l: primaryHsl.l > 55 ? 8 : 96 });
+  let accent = tokens.accent;
+
+  if (contrastRatio(primaryLabel, accent) < 4.5) {
+    accent = primaryHsl.l > 55
+      ? darkenForContrast(accent, primaryLabel, 4.5, 18)
+      : lightenForContrast(accent, primaryLabel, 4.5, 88);
+  }
+
+  return {
+    ...tokens,
+    text,
+    accent,
+    accentAlt: darkenForContrast(tokens.accentAlt, tokens.background, 3, 18),
+    muted: darkenForContrast(tokens.muted, tokens.background, 3, 25)
+  };
+}
+
+function darkenForContrast(hex: string, background: string, minimumRatio: number, minimumLightness: number) {
+  let next = hexToHsl(hex);
+
+  for (let step = 0; step <= 100; step += 1) {
+    const nextHex = hslToHex(next);
+
+    if (contrastRatio(nextHex, background) >= minimumRatio) {
+      return nextHex;
+    }
+
+    if (next.l <= minimumLightness) {
+      return nextHex;
+    }
+
+    next = { ...next, l: Math.max(minimumLightness, next.l - 2) };
+  }
+
+  return hslToHex(next);
+}
+
+function lightenForContrast(hex: string, background: string, minimumRatio: number, maximumLightness: number) {
+  let next = hexToHsl(hex);
+
+  for (let step = 0; step <= 100; step += 1) {
+    const nextHex = hslToHex(next);
+
+    if (contrastRatio(nextHex, background) >= minimumRatio) {
+      return nextHex;
+    }
+
+    if (next.l >= maximumLightness) {
+      return nextHex;
+    }
+
+    next = { ...next, l: Math.min(maximumLightness, next.l + 2) };
+  }
+
+  return hslToHex(next);
 }
 
 function adjustLightnessForContrast(

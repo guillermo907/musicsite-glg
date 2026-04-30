@@ -599,6 +599,11 @@
   text-align: left;
 }
 
+.schemeGrid .activeScheme {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
 .schemeGrid strong {
   color: var(--foreground);
   font-size: 0.84rem;
