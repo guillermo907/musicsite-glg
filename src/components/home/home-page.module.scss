@@ -4,6 +4,18 @@
   position: relative;
 }
 
+:global(html[data-theme="light"]) .page {
+  --accent: var(--light-accent);
+  --accent-alt: var(--light-accent-alt);
+  --background: var(--light-background);
+  --foreground: var(--light-foreground);
+  --muted: var(--light-muted);
+  --line: var(--light-line);
+  --panel: var(--light-panel);
+  --panel-strong: var(--light-panel-strong);
+  --ink: var(--light-ink);
+}
+
 .page::before {
   background:
     linear-gradient(110deg, rgba(18, 15, 13, 0.92), rgba(18, 15, 13, 0.45)),
