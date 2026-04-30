@@ -274,7 +274,7 @@
 .formatGrid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
   margin-top: 2rem;
 }
 
@@ -286,16 +286,52 @@
   overflow: hidden;
 }
 
-.formatCard img {
+.formatImageFrame {
   aspect-ratio: 1.02;
+  overflow: hidden;
+  position: relative;
+}
+
+.formatImageFrame img {
   filter: grayscale(0.14) saturate(0.75) contrast(1.16) brightness(0.82);
-  height: auto;
+  height: 100%;
   object-fit: cover;
   width: 100%;
 }
 
-:global(html[data-theme="light"]) .formatCard img {
+:global(html[data-theme="light"]) .formatImageFrame img {
   filter: grayscale(0.1) saturate(0.78) contrast(1.08) brightness(0.96);
+}
+
+.beachFormat .formatImageFrame {
+  background:
+    radial-gradient(circle at 30% 28%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong) 92%, transparent), var(--panel));
+}
+
+.beachFormat .formatImageFrame::after {
+  background:
+    linear-gradient(to top, var(--panel) 0 22%, color-mix(in srgb, var(--panel) 92%, transparent) 42%, transparent 72%),
+    radial-gradient(ellipse at 23% 72%, color-mix(in srgb, var(--accent) 42%, var(--panel)) 0 16%, transparent 36%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.beachFormat .formatImageFrame img {
+  object-position: 28% 36%;
+  transform: scale(1.22);
+  transform-origin: 30% 36%;
+}
+
+.pressFormat .formatImageFrame img {
+  filter: grayscale(0.22) saturate(0.7) contrast(1.2) brightness(0.78);
+  object-position: 42% 42%;
+}
+
+:global(html[data-theme="light"]) .pressFormat .formatImageFrame img {
+  filter: grayscale(0.12) saturate(0.82) contrast(1.1) brightness(0.94);
 }
 
 .formatCard div {
@@ -433,6 +469,28 @@
 
 .featuredScene .secondaryPhoto:last-child {
   transform: scale(1.012) translateY(-0.5rem);
+}
+
+.beachScene .muralImages::after {
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--background) 88%, #000) 0 24%, transparent 62%),
+    radial-gradient(ellipse at 28% 76%, color-mix(in srgb, var(--accent) 38%, var(--background)) 0 13%, transparent 34%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+.beachScene .muralImages img {
+  object-position: 28% 34%;
+  transform: scale(1.2);
+  transform-origin: 30% 34%;
+}
+
+.pressScene .secondaryPhoto:last-child {
+  filter: grayscale(0.24) saturate(0.7) contrast(1.24) brightness(0.7);
+  object-position: 42% 44%;
 }
 
 .muralScene:not(.layeredScene) .muralImages img {

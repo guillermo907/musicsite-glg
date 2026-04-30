@@ -135,6 +135,13 @@ const eventCopy: Record<Locale, EventCopy> = {
         description:
           "A more electric vocabulary for venues, casinos, cultural programming, artist showcases, and moments where the guitar should step forward.",
         image: "/events/casino1.jpg"
+      },
+      {
+        eyebrow: "Corporate & media",
+        title: "Press moments, activations, and cultural rooms",
+        description:
+          "A polished performance presence for brand activations, interviews, institutional programs, openings, and events where music supports a public-facing story.",
+        image: "/events/entrevista1.jpg"
       }
     ],
     gallery: [
@@ -151,7 +158,7 @@ const eventCopy: Record<Locale, EventCopy> = {
       {
         title: "Cultural rooms",
         place: "Gallery openings and urban performance",
-        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg"]
+        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg", "/events/entrevista1.jpg"]
       },
       {
         title: "Restaurant atmosphere",
@@ -228,6 +235,13 @@ const eventCopy: Record<Locale, EventCopy> = {
         description:
           "Un vocabulario más eléctrico para venues, casinos, programación cultural, showcases y momentos donde la guitarra debe dar un paso al frente.",
         image: "/events/casino1.jpg"
+      },
+      {
+        eyebrow: "Corporativo y medios",
+        title: "Prensa, activaciones y espacios culturales",
+        description:
+          "Una presencia musical pulida para activaciones de marca, entrevistas, programas institucionales, aperturas y eventos donde la música acompaña una historia pública.",
+        image: "/events/entrevista1.jpg"
       }
     ],
     gallery: [
@@ -244,7 +258,7 @@ const eventCopy: Record<Locale, EventCopy> = {
       {
         title: "Espacios culturales",
         place: "Galerías y performance urbana",
-        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg"]
+        images: ["/events/gallery1.jpg", "/events/trainstation1.jpg", "/events/entrevista1.jpg"]
       },
       {
         title: "Ambiente de restaurante",
@@ -340,8 +354,13 @@ export function EventsPage({ content }: EventsPageProps) {
         </div>
         <div className={styles.formatGrid}>
           {copy.eventFormats.map((format) => (
-            <article key={format.title} className={styles.formatCard}>
-              <Image src={format.image} alt="" width={900} height={720} />
+            <article
+              key={format.title}
+              className={[styles.formatCard, imageTreatmentClass(format.image)].filter(Boolean).join(" ")}
+            >
+              <div className={styles.formatImageFrame}>
+                <Image src={format.image} alt="" width={900} height={720} />
+              </div>
               <div>
                 <span>{format.eyebrow}</span>
                 <h3>{format.title}</h3>
@@ -364,7 +383,9 @@ export function EventsPage({ content }: EventsPageProps) {
               className={[
                 styles.muralScene,
                 index === 0 ? styles.featuredScene : "",
-                item.images.length > 1 ? styles.layeredScene : ""
+                item.images.length > 1 ? styles.layeredScene : "",
+                item.images.some((image) => image.includes("beach")) ? styles.beachScene : "",
+                item.images.some((image) => image.includes("entrevista")) ? styles.pressScene : ""
               ].filter(Boolean).join(" ")}
             >
               <div className={styles.muralImages}>
@@ -398,6 +419,18 @@ export function EventsPage({ content }: EventsPageProps) {
       </section>
     </main>
   );
+}
+
+function imageTreatmentClass(image: string) {
+  if (image.includes("beach")) {
+    return styles.beachFormat;
+  }
+
+  if (image.includes("entrevista")) {
+    return styles.pressFormat;
+  }
+
+  return "";
 }
 
 function LanguageToggle({
