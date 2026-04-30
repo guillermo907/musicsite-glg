@@ -1,7 +1,6 @@
 "use client";
 
 import type { SiteContent } from "@/lib/types";
-import { themeCssVariables } from "@/lib/theme-contrast";
 import Image from "next/image";
 import { useEffect, useSyncExternalStore } from "react";
 import { ThemeModeToggle } from "./theme-mode-toggle";
@@ -112,7 +111,6 @@ export function HomePage({ content }: HomePageProps) {
         };
 
   const bgStyle = {
-    ...themeCssVariables(content.theme),
     ...(content.theme.backgroundImage
       ? { "--hero-image": `url(${content.theme.backgroundImage})` }
       : {}),

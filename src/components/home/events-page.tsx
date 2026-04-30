@@ -5,7 +5,6 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useEffect, useSyncExternalStore } from "react";
 import type { SiteContent } from "@/lib/types";
-import { themeCssVariables } from "@/lib/theme-contrast";
 import { ThemeModeToggle } from "./theme-mode-toggle";
 import styles from "./events-page.module.scss";
 
@@ -280,7 +279,6 @@ export function EventsPage({ content }: EventsPageProps) {
   }, [locale]);
 
   const pageStyle = {
-    ...themeCssVariables(content.theme),
     ...(content.theme.backgroundImage
       ? { "--hero-image": `url(${content.theme.backgroundImage})` }
       : {}),
