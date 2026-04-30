@@ -19,8 +19,8 @@
 .page::before {
   background:
     radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 30rem),
-    linear-gradient(118deg, rgba(18, 15, 13, 0.96), rgba(18, 15, 13, 0.62)),
-    var(--hero-image, linear-gradient(135deg, rgba(217, 164, 65, 0.14), rgba(70, 183, 169, 0.08)));
+    linear-gradient(118deg, rgba(18, 18, 18, 0.96), rgba(18, 18, 18, 0.62)),
+    var(--hero-image, linear-gradient(135deg, rgba(98, 0, 238, 0.14), rgba(3, 218, 198, 0.08)));
   background-size: cover;
   content: "";
   inset: 0 0 auto;
@@ -34,13 +34,14 @@
   background:
     radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 30rem),
     linear-gradient(118deg, rgba(255, 250, 240, 0.96), rgba(255, 250, 240, 0.66)),
-    var(--light-hero-image, linear-gradient(135deg, rgba(217, 164, 65, 0.18), rgba(70, 183, 169, 0.1)));
+    var(--light-hero-image, linear-gradient(135deg, rgba(98, 0, 238, 0.14), rgba(1, 135, 134, 0.1)));
+  background-size: cover;
 }
 
 .page::after {
   background-image:
-    linear-gradient(90deg, rgba(255, 247, 234, 0.045) 1px, transparent 1px),
-    linear-gradient(rgba(255, 247, 234, 0.035) 1px, transparent 1px);
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--foreground) 2%, transparent) 1px, transparent 1px);
   background-size: 82px 82px;
   content: "";
   inset: 0;
@@ -288,41 +289,61 @@
 
 .formatImageFrame {
   aspect-ratio: 1.02;
+  background:
+    radial-gradient(circle at 24% 18%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 36%),
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--accent-alt) 26%, transparent), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong) 88%, transparent), var(--panel));
   overflow: hidden;
   position: relative;
 }
 
+.formatImageFrame::after {
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--background) 58%, transparent), transparent 48%),
+    radial-gradient(circle at 18% 78%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 28%);
+  content: "";
+  inset: 0;
+  mix-blend-mode: color;
+  pointer-events: none;
+  position: absolute;
+}
+
 .formatImageFrame img {
-  filter: grayscale(0.14) saturate(0.75) contrast(1.16) brightness(0.82);
+  filter: grayscale(0.28) saturate(0.76) contrast(1.16) brightness(0.82);
   height: 100%;
   object-fit: cover;
+  opacity: 0.9;
   width: 100%;
 }
 
 :global(html[data-theme="light"]) .formatImageFrame img {
-  filter: grayscale(0.1) saturate(0.78) contrast(1.08) brightness(0.96);
+  filter: grayscale(0.22) saturate(0.82) contrast(1.08) brightness(0.96);
+  opacity: 0.82;
 }
 
 .beachFormat .formatImageFrame {
   background:
-    radial-gradient(circle at 30% 28%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 42%),
+    radial-gradient(circle at 74% 18%, color-mix(in srgb, var(--accent-alt) 32%, transparent), transparent 36%),
+    radial-gradient(circle at 26% 70%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 38%),
     linear-gradient(145deg, color-mix(in srgb, var(--panel-strong) 92%, transparent), var(--panel));
 }
 
 .beachFormat .formatImageFrame::after {
   background:
-    linear-gradient(to top, var(--panel) 0 22%, color-mix(in srgb, var(--panel) 92%, transparent) 42%, transparent 72%),
-    radial-gradient(ellipse at 23% 72%, color-mix(in srgb, var(--accent) 42%, var(--panel)) 0 16%, transparent 36%);
+    linear-gradient(to top, color-mix(in srgb, var(--background) 70%, transparent) 0 22%, transparent 70%),
+    radial-gradient(ellipse at 64% 58%, color-mix(in srgb, var(--accent) 30%, transparent) 0 16%, transparent 38%);
   content: "";
   inset: 0;
+  mix-blend-mode: color;
   pointer-events: none;
   position: absolute;
 }
 
 .beachFormat .formatImageFrame img {
-  object-position: 28% 36%;
-  transform: scale(1.22);
-  transform-origin: 30% 36%;
+  filter: grayscale(0.18) saturate(0.72) contrast(1.12) brightness(0.86);
+  object-position: center;
+  transform: none;
+  transform-origin: center;
 }
 
 .pressFormat .formatImageFrame img {
@@ -473,19 +494,20 @@
 
 .beachScene .muralImages::after {
   background:
-    linear-gradient(to top, color-mix(in srgb, var(--background) 88%, #000) 0 24%, transparent 62%),
-    radial-gradient(ellipse at 28% 76%, color-mix(in srgb, var(--accent) 38%, var(--background)) 0 13%, transparent 34%);
+    linear-gradient(to top, color-mix(in srgb, var(--background) 82%, transparent) 0 24%, transparent 62%),
+    radial-gradient(ellipse at 68% 58%, color-mix(in srgb, var(--accent) 32%, transparent) 0 13%, transparent 34%);
   content: "";
   inset: 0;
+  mix-blend-mode: color;
   pointer-events: none;
   position: absolute;
   z-index: 3;
 }
 
 .beachScene .muralImages img {
-  object-position: 28% 34%;
-  transform: scale(1.2);
-  transform-origin: 30% 34%;
+  object-position: center;
+  transform: scale(1.03);
+  transform-origin: center;
 }
 
 .pressScene .secondaryPhoto:last-child {

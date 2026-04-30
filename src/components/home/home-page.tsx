@@ -16,11 +16,11 @@ let localeHydrated = false;
 
 function getStoredLocale(): Locale {
   if (typeof window === "undefined") {
-    return "en";
+    return "es";
   }
 
   if (!localeHydrated) {
-    return "en";
+    return "es";
   }
 
   const saved = window.localStorage.getItem("site-locale");
@@ -50,7 +50,7 @@ function setStoredLocale(locale: Locale) {
 }
 
 export function HomePage({ content }: HomePageProps) {
-  const locale = useSyncExternalStore<Locale>(subscribeLocale, getStoredLocale, () => "en");
+  const locale = useSyncExternalStore<Locale>(subscribeLocale, getStoredLocale, () => "es");
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -176,6 +176,28 @@ export function HomePage({ content }: HomePageProps) {
               <li key={credential}>{credential}</li>
             ))}
           </ul>
+          <aside className={styles.bioInterview}>
+            <div>
+              <span>{locale === "es" ? "Entrevista" : "Interview"}</span>
+              <strong>
+                {locale === "es"
+                  ? "MUSICAST con Erick Giovanni"
+                  : "MUSICAST with Erick Giovanni"}
+              </strong>
+              <p>
+                {locale === "es"
+                  ? "Conversación con un amigo músico sobre jazz, estándares, métodos de estudio y el oficio real de la guitarra."
+                  : "A musician-to-musician conversation on jazz, standards, study methods, and the craft behind the guitar."}
+              </p>
+              <a href="https://www.youtube.com/@ErickGiovanniPrz" target="_blank" rel="noreferrer">
+                {locale === "es" ? "Canal de Erick Giovanni" : "Erick Giovanni channel"}
+              </a>
+            </div>
+            <VideoEmbed
+              title="MUSICAST #3 - WILLY LOPEZ"
+              url="https://www.youtube.com/watch?v=WVzK-OVU2ys&t=1375s"
+            />
+          </aside>
         </div>
       </section>
 
@@ -240,7 +262,9 @@ export function HomePage({ content }: HomePageProps) {
         <div className={styles.gallery}>
           {localized.gallery.map((item) => (
             <article key={item.title}>
-              <Image src={item.image} alt="" width={900} height={780} unoptimized />
+              <span className={styles.galleryImageFrame}>
+                <ThemedGalleryArtwork image={item.image} title={item.title} />
+              </span>
               <div>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
@@ -279,9 +303,41 @@ export function HomePage({ content }: HomePageProps) {
   );
 }
 
+function ThemedGalleryArtwork({ image, title }: { image: string; title: string }) {
+  const kind = image.includes("blues-amp")
+    ? "amp"
+    : image.includes("lesson-room")
+      ? "lesson"
+      : "stage";
+
+  if (!image.includes("/gallery/")) {
+    return <Image src={image} alt="" width={900} height={780} unoptimized />;
+  }
+
+  return (
+    <span className={`${styles.themedArtwork} ${styles[`${kind}Artwork`]}`} role="img" aria-label={title}>
+      <i className={styles.artOrbOne} />
+      <i className={styles.artOrbTwo} />
+      <i className={styles.artShape} />
+      <i className={styles.artLineOne} />
+      <i className={styles.artLineTwo} />
+      <i className={styles.artBase} />
+      {kind === "amp" ? (
+        <span className={styles.ampFace}>
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : null}
+      {kind === "lesson" ? <i className={styles.lessonHill} /> : null}
+    </span>
+  );
+}
+
 function VideoEmbed({ title, url }: { title: string; url: string }) {
   const videoId = getYouTubeVideoId(url);
-  const embedUrl = getYouTubeEmbedUrl(videoId);
+  const embedUrl = getYouTubeEmbedUrl(videoId, getYouTubeStartSeconds(url));
 
   return (
     <details className={styles.videoFrame}>
@@ -320,8 +376,40 @@ function getYouTubeVideoId(url: string) {
   }
 }
 
-function getYouTubeEmbedUrl(videoId: string) {
-  return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0`;
+function getYouTubeStartSeconds(url: string) {
+  try {
+    const parsed = new URL(url);
+    const rawStart = parsed.searchParams.get("t") ?? parsed.searchParams.get("start");
+
+    if (!rawStart) {
+      return 0;
+    }
+
+    const parsedStart = Number.parseInt(rawStart.replace("s", ""), 10);
+
+    return Number.isFinite(parsedStart) ? Math.max(0, parsedStart) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function getYouTubeEmbedUrl(videoId: string, start = 0) {
+  const params = new URLSearchParams({
+    autoplay: "1",
+    controls: "0",
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+    iv_load_policy: "3",
+    disablekb: "1",
+    fs: "0"
+  });
+
+  if (start > 0) {
+    params.set("start", String(start));
+  }
+
+  return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
 }
 
 function LanguageToggle({

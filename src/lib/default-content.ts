@@ -115,15 +115,15 @@ export const defaultContent: SiteContent = {
     "Send a note for lessons, performance bookings, recording work, or a custom plan for your musical goals.",
   contactEmail: "booking@guillermolopezguitar.com",
   theme: {
-    accent: "#d9a441",
-    accentAlt: "#46b7a9",
-    background: "#120f0d",
+    accent: "#6200EE",
+    accentAlt: "#03DAC6",
+    background: "#121212",
     backgroundImage: "",
     contrast: "balanced",
     light: {
-      accent: "#c9862f",
-      accentAlt: "#4f9f94",
-      background: "#f3ead7",
+      accent: "#6200EE",
+      accentAlt: "#018786",
+      background: "#FFFFFF",
       backgroundImage: "",
       contrast: "editorial"
     }
@@ -136,7 +136,7 @@ export const defaultContent: SiteContent = {
   },
   socialLinks: {
     instagram: "https://instagram.com/",
-    youtube: "https://youtube.com/",
+    youtube: "https://www.youtube.com/@comando9072",
     spotify: "https://spotify.com/"
   },
   locales: {

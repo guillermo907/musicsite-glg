@@ -127,7 +127,7 @@ const eventCopy: Record<Locale, EventCopy> = {
         title: "Ceremonies, beach moments, and sunset sets",
         description:
           "A refined guitar presence for ceremonies, vows, cocktail hours, beach clubs, terraces, and destination celebrations that need emotion without excess.",
-        image: "/events/beach1.jpg"
+        image: "/events/beach-ceremony-band.svg"
       },
       {
         eyebrow: "Stages & nightlife",
@@ -168,7 +168,7 @@ const eventCopy: Record<Locale, EventCopy> = {
       {
         title: "Coastal ceremony",
         place: "Beach event",
-        images: ["/events/beach1.jpg"]
+        images: ["/events/beach-ceremony-band.svg"]
       },
       {
         title: "Casino night",
@@ -227,7 +227,7 @@ const eventCopy: Record<Locale, EventCopy> = {
         title: "Ceremonias, playa y sets de atardecer",
         description:
           "Una presencia refinada de guitarra para ceremonias, votos, cocteles, beach clubs, terrazas y celebraciones destino que necesitan emoción sin exceso.",
-        image: "/events/beach1.jpg"
+        image: "/events/beach-ceremony-band.svg"
       },
       {
         eyebrow: "Escenario y noche",
@@ -268,7 +268,7 @@ const eventCopy: Record<Locale, EventCopy> = {
       {
         title: "Ceremonia costera",
         place: "Evento de playa",
-        images: ["/events/beach1.jpg"]
+        images: ["/events/beach-ceremony-band.svg"]
       },
       {
         title: "Noche de casino",

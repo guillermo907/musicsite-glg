@@ -1,14 +1,14 @@
 :root {
   color-scheme: dark;
-  --background: #120f0d;
-  --foreground: #fff7ea;
-  --muted: #c9bda8;
-  --line: rgba(255, 247, 234, 0.16);
-  --panel: rgba(255, 247, 234, 0.08);
-  --panel-strong: rgba(255, 247, 234, 0.14);
-  --accent: #d9a441;
-  --accent-alt: #46b7a9;
-  --ink: #130f0c;
+  --background: #121212;
+  --foreground: #ffffff;
+  --muted: #b3b3b3;
+  --line: rgba(255, 255, 255, 0.12);
+  --panel: rgba(255, 255, 255, 0.08);
+  --panel-strong: rgba(255, 255, 255, 0.12);
+  --accent: #6200EE;
+  --accent-alt: #03DAC6;
+  --ink: #000000;
   --font-display: "Georgia", "Times New Roman", serif;
   --font-body: "Avenir Next", "Helvetica Neue", sans-serif;
 }
@@ -44,9 +44,9 @@ body[data-theme="light"] {
   --panel-strong: var(--light-panel-strong);
   --ink: var(--light-ink);
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 22%, transparent), transparent 32rem),
-    radial-gradient(circle at 80% 12%, color-mix(in srgb, var(--accent-alt) 18%, transparent), transparent 28rem),
-    linear-gradient(135deg, #fffaf0 0%, var(--background) 42%, #e8dcc8 100%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 32rem),
+    radial-gradient(circle at 80% 12%, color-mix(in srgb, var(--accent-alt) 6%, transparent), transparent 28rem),
+    var(--light-background);
 }
 
 a {

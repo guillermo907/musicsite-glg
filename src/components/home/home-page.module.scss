@@ -18,8 +18,8 @@
 
 .page::before {
   background:
-    linear-gradient(110deg, rgba(18, 15, 13, 0.92), rgba(18, 15, 13, 0.45)),
-    var(--hero-image, linear-gradient(135deg, rgba(217, 164, 65, 0.14), rgba(70, 183, 169, 0.08)));
+    linear-gradient(110deg, rgba(18, 18, 18, 0.92), rgba(18, 18, 18, 0.45)),
+    var(--hero-image, linear-gradient(135deg, rgba(98, 0, 238, 0.14), rgba(3, 218, 198, 0.08)));
   background-size: cover;
   content: "";
   inset: 0 0 auto;
@@ -31,15 +31,16 @@
 
 :global(html[data-theme="light"]) .page::before {
   background:
-    linear-gradient(110deg, rgba(255, 250, 240, 0.92), rgba(255, 250, 240, 0.58)),
-    var(--light-hero-image, linear-gradient(135deg, rgba(217, 164, 65, 0.28), rgba(70, 183, 169, 0.16)));
+    linear-gradient(110deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.58)),
+    var(--light-hero-image, linear-gradient(135deg, rgba(98, 0, 238, 0.14), rgba(1, 135, 134, 0.12)));
+  background-size: cover;
   opacity: 0.95;
 }
 
 .page::after {
   background-image:
-    linear-gradient(90deg, rgba(255, 247, 234, 0.04) 1px, transparent 1px),
-    linear-gradient(rgba(255, 247, 234, 0.035) 1px, transparent 1px);
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px);
   background-size: 72px 72px;
   content: "";
   inset: 0;
@@ -51,8 +52,8 @@
 
 :global(html[data-theme="light"]) .page::after {
   background-image:
-    linear-gradient(90deg, rgba(23, 17, 12, 0.055) 1px, transparent 1px),
-    linear-gradient(rgba(23, 17, 12, 0.045) 1px, transparent 1px);
+    linear-gradient(90deg, color-mix(in srgb, #000 5%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, #000 4%, transparent) 1px, transparent 1px);
 }
 
 .nav,
@@ -303,6 +304,60 @@
   padding-left: 1rem;
 }
 
+.bioInterview {
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 13rem),
+    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong) 88%, transparent), color-mix(in srgb, var(--panel) 82%, transparent));
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 0.78fr) minmax(18rem, 1.22fr);
+  margin-top: 2rem;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.bioInterview > div {
+  align-content: center;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.4rem;
+}
+
+.bioInterview span {
+  color: var(--accent-alt);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.bioInterview strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.bioInterview p {
+  color: var(--foreground);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.bioInterview a {
+  color: var(--accent);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.bioInterview .videoFrame {
+  border-radius: 1.1rem;
+  padding: 0.45rem;
+}
+
 .section {
   padding: 6rem 0 0;
 }
@@ -476,11 +531,222 @@
   overflow: hidden;
 }
 
-.gallery img {
+.galleryImageFrame {
   aspect-ratio: 1.15;
-  height: auto;
+  background:
+    radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 34%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent-alt) 24%, transparent), transparent 36%),
+    linear-gradient(140deg, color-mix(in srgb, var(--background) 86%, var(--accent) 14%), var(--panel));
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+
+.galleryImageFrame::before,
+.galleryImageFrame::after {
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.galleryImageFrame::before {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--background) 42%, transparent), transparent 54%),
+    linear-gradient(to top, color-mix(in srgb, var(--accent) 24%, transparent), transparent 48%);
+  z-index: 1;
+}
+
+.galleryImageFrame::after {
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--background) 78%, transparent), transparent 46%),
+    radial-gradient(circle at 18% 82%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 28%);
+  z-index: 2;
+}
+
+.galleryImageFrame img,
+.themedArtwork {
+  aspect-ratio: 1.15;
+  height: 100%;
   object-fit: cover;
   width: 100%;
+}
+
+.galleryImageFrame img {
+  filter: grayscale(0.7) saturate(0.68) contrast(1.12) brightness(0.8);
+  opacity: 0.78;
+}
+
+.themedArtwork {
+  background:
+    radial-gradient(circle at 80% 16%, color-mix(in srgb, var(--accent-alt) 32%, transparent), transparent 25%),
+    radial-gradient(circle at 30% 78%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--background) 90%, var(--accent) 10%), var(--panel));
+  color: var(--foreground);
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+
+.themedArtwork i,
+.themedArtwork span {
+  position: absolute;
+}
+
+.artOrbOne {
+  background: color-mix(in srgb, var(--accent-alt) 54%, transparent);
+  border-radius: 50%;
+  height: 34%;
+  left: 62%;
+  top: 9%;
+  width: 34%;
+}
+
+.artOrbTwo {
+  background: color-mix(in srgb, var(--accent) 52%, transparent);
+  border-radius: 50%;
+  height: 26%;
+  left: 19%;
+  top: 16%;
+  width: 26%;
+}
+
+.artShape {
+  background: color-mix(in srgb, var(--foreground) 24%, transparent);
+  border-radius: 60% 40% 55% 45%;
+  height: 45%;
+  left: 25%;
+  top: 28%;
+  transform: rotate(-38deg);
+  width: 30%;
+}
+
+.artLineOne,
+.artLineTwo {
+  background: color-mix(in srgb, var(--foreground) 62%, transparent);
+  border-radius: 999px;
+  height: 2%;
+  left: 20%;
+  top: 54%;
+  transform: rotate(-48deg);
+  transform-origin: left center;
+  width: 78%;
+}
+
+.artLineTwo {
+  background: color-mix(in srgb, var(--foreground) 38%, transparent);
+  height: 0.75%;
+  left: 26%;
+  top: 59%;
+  width: 66%;
+}
+
+.artBase {
+  background: color-mix(in srgb, var(--background) 72%, var(--foreground) 10%);
+  bottom: 8%;
+  height: 6%;
+  left: 14%;
+  width: 72%;
+}
+
+.ampArtwork .artShape,
+.ampArtwork .artBase {
+  display: none;
+}
+
+.ampFace {
+  border: 0.42rem solid var(--accent);
+  border-radius: 1.4rem;
+  height: 38%;
+  left: 14%;
+  top: 31%;
+  width: 72%;
+}
+
+.ampFace i {
+  background: color-mix(in srgb, var(--foreground) 32%, transparent);
+  height: 4%;
+  left: 8%;
+  width: 84%;
+}
+
+.ampFace i:nth-child(1) {
+  top: 20%;
+}
+
+.ampFace i:nth-child(2) {
+  top: 38%;
+}
+
+.ampFace i:nth-child(3) {
+  top: 56%;
+}
+
+.ampFace i:nth-child(4) {
+  top: 74%;
+}
+
+.ampArtwork .artLineOne {
+  left: 20%;
+  top: 28%;
+  transform: rotate(48deg);
+  width: 82%;
+}
+
+.ampArtwork .artLineTwo {
+  display: none;
+}
+
+.ampArtwork .artOrbTwo {
+  left: 16%;
+  top: 11%;
+}
+
+.ampArtwork .artOrbOne {
+  left: 65%;
+  top: 63%;
+}
+
+.lessonArtwork .artShape {
+  background: var(--accent);
+  border-radius: 68% 32% 58% 42%;
+  height: 43%;
+  left: 51%;
+  top: 24%;
+  transform: rotate(18deg);
+  width: 23%;
+}
+
+.lessonArtwork .artBase {
+  display: none;
+}
+
+.lessonArtwork .lessonHill {
+  background: color-mix(in srgb, var(--panel-strong) 78%, var(--foreground) 8%);
+  border-radius: 50% 50% 0 0;
+  bottom: -5%;
+  height: 46%;
+  left: -4%;
+  width: 112%;
+}
+
+.lessonArtwork .artLineOne {
+  left: 32%;
+  top: 32%;
+  transform: rotate(68deg);
+  width: 67%;
+}
+
+.lessonArtwork .artLineTwo {
+  left: 41%;
+  top: 34%;
+  transform: rotate(68deg);
+  width: 58%;
+}
+
+:global(html[data-theme="light"]) .galleryImageFrame img {
+  filter: grayscale(0.62) saturate(0.72) contrast(1.06) brightness(0.96);
+  opacity: 0.72;
 }
 
 .gallery div {
@@ -565,6 +831,7 @@
 
   .hero,
   .bio,
+  .bioInterview,
   .videoSection,
   .serviceGrid,
   .packageGrid,
@@ -576,5 +843,29 @@
   .hero {
     min-height: auto;
     padding-top: 2rem;
+  }
+
+  .heroCard {
+    aspect-ratio: 1.35;
+    border-radius: 1.3rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
+    min-height: 13rem;
+    padding: 1.15rem;
+  }
+
+  .heroCard strong {
+    font-size: clamp(2rem, 15vw, 3.25rem);
+    max-width: 9ch;
+  }
+
+  .heroCard p,
+  .heroCard small {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .stringLine {
+    height: 92%;
+    top: 2%;
   }
 }

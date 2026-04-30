@@ -397,6 +397,18 @@ export function normalizeThemePalette(
     accent = ensureContrast(accent, background, 4.5, foreground);
     accentAlt = ensureContrast(accentAlt, background, 4.5, foreground);
     ink = readableTextColor(accent);
+
+    // Ensure button text has sufficient contrast with accent background
+    if (contrastRatio(ink, accent) < 4.5) {
+      const accentHsl = hexToHsl(accent);
+      // If luminance is high (light accent), use dark text; if low (dark accent), use light text
+      ink = accentHsl.l > 50 ? darkText : lightText;
+
+      // If still not sufficient, adjust further
+      if (contrastRatio(ink, accent) < 4.5) {
+        ink = luminance(accent) > 0.5 ? darkText : lightText;
+      }
+    }
   }
 
   return {
