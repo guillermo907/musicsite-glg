@@ -101,10 +101,13 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
       ...current,
       theme: {
         ...current.theme,
-        light: {
-          ...current.theme.light,
-          [key]: value
-        }
+        light: normalizeSiteTheme({
+          ...current.theme,
+          light: {
+            ...current.theme.light,
+            [key]: value
+          }
+        }).light
       }
     }));
   }
@@ -139,7 +142,7 @@ export function AdminDashboard({ initialContent, userEmail }: AdminDashboardProp
         theme: {
           ...current.theme,
           light: {
-            ...current.theme.light,
+            ...normalizeSiteTheme(current.theme).light,
             accent: variant.tokens.accent,
             accentAlt: variant.tokens.accentAlt,
             background: variant.tokens.background

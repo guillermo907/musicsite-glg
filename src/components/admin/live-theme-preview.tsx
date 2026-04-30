@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { normalizeSiteTheme, readableTextColor } from "@/lib/theme-contrast";
+import { normalizeSiteTheme } from "@/lib/theme-contrast";
 import type { SiteContent } from "@/lib/types";
 import styles from "./admin-dashboard.module.scss";
 
@@ -24,7 +24,7 @@ export function LiveThemePreview({ content, activePalette }: LiveThemePreviewPro
     "--line": activeTheme.line,
     "--panel": activeTheme.panel,
     "--panel-strong": activeTheme.panelStrong,
-    "--ink": readableTextColor(activeTheme.accent),
+    "--ink": activeTheme.ink,
     "--snapshot-image": activeTheme.backgroundImage ? `url(${activeTheme.backgroundImage})` : "none"
   } as React.CSSProperties;
 

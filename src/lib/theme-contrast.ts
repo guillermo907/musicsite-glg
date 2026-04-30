@@ -34,6 +34,8 @@ const darkFallback = "#120f0d";
 const lightFallback = "#f3ead7";
 const lightText = "#fffaf0";
 const darkText = "#120f0d";
+const lightForeground = "#17110c";
+const lightMuted = "#544838";
 
 function clamp(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -271,6 +273,36 @@ export function contrastTokens(background: string, contrast: ContrastMode = "bal
   const isLight = luminance(safeBackground) > 0.45;
   const baseForeground = readableTextColor(safeBackground);
 
+  if (isLight) {
+    if (contrast === "soft") {
+      return {
+        foreground: lightForeground,
+        muted: darkenForContrast(lightMuted, safeBackground, 3, 25),
+        line: "rgba(23, 17, 12, 0.18)",
+        panel: "rgba(255, 252, 245, 0.72)",
+        panelStrong: "rgba(255, 252, 245, 0.88)"
+      };
+    }
+
+    if (contrast === "high") {
+      return {
+        foreground: "#070504",
+        muted: "#211a14",
+        line: "rgba(7, 5, 4, 0.34)",
+        panel: "rgba(255, 255, 255, 0.94)",
+        panelStrong: "rgba(255, 255, 255, 0.99)"
+      };
+    }
+
+    return {
+      foreground: lightForeground,
+      muted: darkenForContrast(lightMuted, safeBackground, 3, 25),
+      line: "rgba(23, 17, 12, 0.24)",
+      panel: "rgba(255, 252, 245, 0.84)",
+      panelStrong: "rgba(255, 252, 245, 0.96)"
+    };
+  }
+
   if (contrast === "soft") {
     return {
       foreground: baseForeground,
@@ -323,21 +355,32 @@ export function normalizeThemePalette(
   fallbackBackground = darkFallback,
   mode: "dark" | "light" = "dark"
 ): NormalizedPalette {
-  const background = normalizeHex(palette.background, fallbackBackground);
+  let background = normalizeHex(palette.background, fallbackBackground);
+
+  if (mode === "light") {
+    const backgroundHsl = hexToHsl(background);
+    background = hslToHex({
+      ...backgroundHsl,
+      s: Math.min(backgroundHsl.s, 18),
+      l: clampPercent(backgroundHsl.l, 92, 97)
+    });
+  }
+
   const tokens = contrastTokens(background, palette.contrast);
   let foreground = tokens.foreground;
   let muted = tokens.muted;
-  let accent = ensureContrast(normalizeHex(palette.accent, "#d9a441"), background, mode === "light" ? 3 : 4.5, foreground);
-  let accentAlt = ensureContrast(normalizeHex(palette.accentAlt, "#46b7a9"), background, mode === "light" ? 3 : 4.5, foreground);
+  let accent = normalizeHex(palette.accent, "#d9a441");
+  let accentAlt = normalizeHex(palette.accentAlt, "#46b7a9");
   let ink = readableTextColor(accent);
 
   if (mode === "light") {
-    foreground = darkenForContrast(foreground, background, 4.5, 5);
-    muted = darkenForContrast(muted, background, 3, 25);
+    foreground = lightForeground;
+    muted = darkenForContrast(lightMuted, background, 3, 25);
+    accent = darkenForContrast(accent, background, 3, 18);
     accentAlt = darkenForContrast(accentAlt, background, 3, 18);
 
     const accentHsl = hexToHsl(accent);
-    ink = hslToHex({ h: accentHsl.h, s: 8, l: accentHsl.l > 55 ? 8 : 96 });
+    ink = accentHsl.l > 52 ? lightForeground : lightText;
 
     if (contrastRatio(ink, accent) < 4.5) {
       accent =
@@ -345,6 +388,10 @@ export function normalizeThemePalette(
           ? darkenForContrast(accent, ink, 4.5, 18)
           : lightenForContrast(accent, ink, 4.5, 88);
     }
+  } else {
+    accent = ensureContrast(accent, background, 4.5, foreground);
+    accentAlt = ensureContrast(accentAlt, background, 4.5, foreground);
+    ink = readableTextColor(accent);
   }
 
   return {
